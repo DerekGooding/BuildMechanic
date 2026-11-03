@@ -50,6 +50,19 @@ namespace BuildMechanic.UI
             _fontTexture.SetData(colorData);
         }
 
+        private static char NormalizeChar(char c)
+        {
+            return c switch
+            {
+                '\u2014' or '\u2013' => '-',
+                '\u2018' or '\u2019' => '\'',
+                '\u201C' or '\u201D' => '"',
+                '\u00A0' => ' ',
+                '\u2026' => '.',
+                _ => c
+            };
+        }
+
         public void DrawString(SpriteBatch spriteBatch, string text, Vector2 position, Color color, float scale = 2.0f)
         {
             if (string.IsNullOrEmpty(text) || _fontTexture == null) return;
@@ -58,8 +71,9 @@ namespace BuildMechanic.UI
             float curX = position.X;
             float curY = position.Y;
 
-            foreach (char c in text)
+            foreach (char rawChar in text)
             {
+                char c = NormalizeChar(rawChar);
                 if (c == '\n')
                 {
                     curX = position.X;
@@ -89,8 +103,9 @@ namespace BuildMechanic.UI
             float curWidth = 0f;
             float lines = 1;
 
-            foreach (char c in text)
+            foreach (char rawChar in text)
             {
+                char c = NormalizeChar(rawChar);
                 if (c == '\n')
                 {
                     maxWidth = Math.Max(maxWidth, curWidth);

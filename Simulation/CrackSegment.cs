@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace BuildMechanic.Simulation
 {
@@ -23,37 +22,34 @@ namespace BuildMechanic.Simulation
 
         public bool IsRepaired => Stage == CrackStage.FlushFinished;
 
-        public BoundingBox GetBoundingBox(Matrix parentWorld)
-        {
-            if (LocalPoints.Count == 0) return new BoundingBox(Vector3.Zero, Vector3.Zero);
-
-            Vector3 min = new Vector3(float.MaxValue);
-            Vector3 max = new Vector3(float.MinValue);
-
-            foreach (var pt in LocalPoints)
-            {
-                Vector3 w = Vector3.Transform(pt, parentWorld);
-                min = Vector3.Min(min, w - new Vector3(0.08f));
-                max = Vector3.Max(max, w + new Vector3(0.08f));
-            }
-
-            return new BoundingBox(min, max);
-        }
-
         public bool RayIntersects(Ray ray, Matrix parentWorld, out float distance, out Vector3 hitPoint)
         {
             distance = float.MaxValue;
             hitPoint = Vector3.Zero;
-            var box = GetBoundingBox(parentWorld);
+            bool anyHit = false;
 
-            float? hit = ray.Intersects(box);
-            if (hit.HasValue)
+            if (LocalPoints.Count < 2) return false;
+
+            // Test tight bounding boxes per individual segment
+            for (int i = 0; i < LocalPoints.Count - 1; i++)
             {
-                distance = hit.Value;
-                hitPoint = ray.Position + ray.Direction * distance;
-                return true;
+                Vector3 p0 = Vector3.Transform(LocalPoints[i], parentWorld);
+                Vector3 p1 = Vector3.Transform(LocalPoints[i + 1], parentWorld);
+
+                Vector3 min = Vector3.Min(p0, p1) - new Vector3(0.045f, 0.045f, 0.045f);
+                Vector3 max = Vector3.Max(p0, p1) + new Vector3(0.045f, 0.045f, 0.045f);
+                var segBox = new BoundingBox(min, max);
+
+                float? hit = ray.Intersects(segBox);
+                if (hit.HasValue && hit.Value < distance)
+                {
+                    distance = hit.Value;
+                    hitPoint = ray.Position + ray.Direction * distance;
+                    anyHit = true;
+                }
             }
-            return false;
+
+            return anyHit;
         }
 
         /// <summary>
@@ -70,7 +66,7 @@ namespace BuildMechanic.Simulation
                 {
                     Stage = CrackStage.PreppedGroove;
                     StageProgress = 0.0f;
-                    return true; // Advanced stage
+                    return true;
                 }
             }
             else if (Stage == CrackStage.WeldedBead)
@@ -80,7 +76,7 @@ namespace BuildMechanic.Simulation
                 {
                     Stage = CrackStage.FlushFinished;
                     StageProgress = 1.0f;
-                    return true; // Finished repair!
+                    return true;
                 }
             }
             return false;
@@ -99,7 +95,7 @@ namespace BuildMechanic.Simulation
                 {
                     Stage = CrackStage.WeldedBead;
                     StageProgress = 0.0f;
-                    return true; // Advanced stage
+                    return true;
                 }
             }
             return false;

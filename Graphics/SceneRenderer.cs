@@ -183,9 +183,11 @@ namespace BuildMechanic.Graphics
             foreach (var plate in chassis.Plates)
             {
                 Matrix plateWorld = plate.GetWorldMatrix();
+                Matrix plateRot = plate.GetRotationMatrix();
 
                 foreach (var bolt in plate.Bolts)
                 {
+                    // If plate is detached and bolt is completely removed, tuck it into the mounting socket
                     Vector3 boltPos = bolt.GetWorldPosition(plateWorld);
 
                     if (tools.HoveredBolt == bolt)
@@ -201,8 +203,8 @@ namespace BuildMechanic.Graphics
                         _effect.DiffuseColor = new Vector3(1.2f, 0.8f, 0.4f); // Loose orange tint
                     }
 
-                    // Rotate bolt around shank (Y axis of bolt mesh)
-                    Matrix boltRot = Matrix.CreateRotationY(bolt.SpinAngle) * Matrix.CreateRotationX(MathHelper.PiOver2);
+                    // Rotate bolt around shank (Y axis of bolt mesh) and tilt with parent plate
+                    Matrix boltRot = Matrix.CreateRotationY(bolt.SpinAngle) * Matrix.CreateRotationX(MathHelper.PiOver2) * plateRot;
                     _effect.World = boltRot * Matrix.CreateTranslation(boltPos);
                     _boltMesh.Draw(_device, _effect);
                 }
@@ -219,24 +221,11 @@ namespace BuildMechanic.Graphics
 
                 foreach (var crack in plate.Cracks)
                 {
-                    Color crackColor = crack.Stage switch
-                    {
-                        CrackStage.Fractured => Color.Black,
-                        CrackStage.PreppedGroove => new Color(200, 210, 225), // Clean polished V-groove
-                        CrackStage.WeldedBead => new Color(255, 140, 20),     // Glowing hot weld bead
-                        CrackStage.FlushFinished => new Color(180, 190, 200), // Ground flush
-                        _ => Color.Red
-                    };
+                    int segCount = crack.LocalPoints.Count - 1;
+                    if (segCount <= 0) continue;
 
-                    if (tools.HoveredCrack == crack)
-                    {
-                        crackColor = Color.Yellow;
-                    }
-
-                    _effect.DiffuseColor = crackColor.ToVector3();
-
-                    // Draw crack line segments as small connected boxes
-                    for (int i = 0; i < crack.LocalPoints.Count - 1; i++)
+                    // Draw crack line segments with progressive bead/groove states
+                    for (int i = 0; i < segCount; i++)
                     {
                         Vector3 p0 = Vector3.Transform(crack.LocalPoints[i], plateWorld);
                         Vector3 p1 = Vector3.Transform(crack.LocalPoints[i + 1], plateWorld);
@@ -247,7 +236,80 @@ namespace BuildMechanic.Graphics
                         if (len < 0.001f) continue;
 
                         dir /= len;
-                        float thickness = crack.Stage == CrackStage.WeldedBead ? 0.035f : 0.022f;
+
+                        float segStart = (float)i / segCount;
+                        float segEnd = (float)(i + 1) / segCount;
+                        float progress = crack.StageProgress;
+
+                        Color segColor;
+                        float thickness = 0.022f;
+
+                        switch (crack.Stage)
+                        {
+                            case CrackStage.Fractured:
+                                if (progress >= segEnd)
+                                {
+                                    segColor = new Color(205, 215, 230); // Clean prepped groove
+                                }
+                                else if (progress > segStart && tools.IsOperating && tools.HoveredCrack == crack)
+                                {
+                                    segColor = new Color(255, 240, 150); // Active grind flash
+                                }
+                                else
+                                {
+                                    segColor = new Color(25, 25, 28); // Raw dark jagged fracture
+                                }
+                                break;
+
+                            case CrackStage.PreppedGroove:
+                                if (progress >= segEnd)
+                                {
+                                    segColor = new Color(255, 130, 20); // Solidified weld bead
+                                    thickness = 0.036f;
+                                }
+                                else if (progress > segStart && tools.IsOperating && tools.HoveredCrack == crack)
+                                {
+                                    segColor = new Color(255, 255, 220); // Molten welding puddle
+                                    thickness = 0.040f;
+                                }
+                                else
+                                {
+                                    segColor = new Color(205, 215, 230); // Clean prepped groove
+                                    thickness = 0.025f;
+                                }
+                                break;
+
+                            case CrackStage.WeldedBead:
+                                if (progress >= segEnd)
+                                {
+                                    segColor = new Color(185, 195, 205); // Ground flush steel
+                                    thickness = 0.022f;
+                                }
+                                else if (progress > segStart && tools.IsOperating && tools.HoveredCrack == crack)
+                                {
+                                    segColor = new Color(255, 220, 100); // Grinder smoothing bead
+                                    thickness = 0.030f;
+                                }
+                                else
+                                {
+                                    segColor = new Color(245, 120, 20); // Raised proud weld bead
+                                    thickness = 0.036f;
+                                }
+                                break;
+
+                            case CrackStage.FlushFinished:
+                            default:
+                                segColor = new Color(185, 195, 205); // Polished flush steel
+                                thickness = 0.022f;
+                                break;
+                        }
+
+                        if (tools.HoveredCrack == crack && !tools.IsOperating)
+                        {
+                            segColor = Color.Yellow;
+                        }
+
+                        _effect.DiffuseColor = segColor.ToVector3();
 
                         Matrix orient = Matrix.CreateScale(thickness, thickness, len) *
                                         Matrix.CreateWorld(mid, dir, Vector3.Up);

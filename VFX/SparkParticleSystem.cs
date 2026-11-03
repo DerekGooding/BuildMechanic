@@ -16,7 +16,9 @@ namespace BuildMechanic.VFX
 
     public class SparkParticleSystem
     {
-        private readonly List<SparkParticle> _particles = new List<SparkParticle>(500);
+        private const int MaxParticles = 400;
+        private readonly List<SparkParticle> _particles = new List<SparkParticle>(MaxParticles);
+        private readonly VertexPositionColorTexture[] _vertexBuffer = new VertexPositionColorTexture[MaxParticles * 6];
         private readonly Random _rng = new Random(42);
         private Texture2D _glowTex;
 
@@ -100,13 +102,15 @@ namespace BuildMechanic.VFX
             Vector3 right = invView.Right;
             Vector3 up = invView.Up;
 
-            var vertices = new List<VertexPositionColorTexture>(_particles.Count * 6);
+            int vertIdx = 0;
+            int count = Math.Min(_particles.Count, MaxParticles);
 
-            foreach (var p in _particles)
+            for (int i = 0; i < count; i++)
             {
+                var p = _particles[i];
                 float t = p.Life / p.MaxLife; // 1.0 down to 0.0
-                Color col = Color.Lerp(Color.DarkOrange, Color.White, t * t);
-                col.A = (byte)(t * 255);
+                // Premultiply by t for smooth fading in Additive blend state
+                Color col = Color.Lerp(Color.DarkOrange, Color.White, t * t) * (t * t);
 
                 float s = p.Size * (0.4f + 0.6f * t);
 
@@ -115,19 +119,19 @@ namespace BuildMechanic.VFX
                 Vector3 p2 = p.Position + right * s + up * s;
                 Vector3 p3 = p.Position - right * s + up * s;
 
-                vertices.Add(new VertexPositionColorTexture(p0, col, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionColorTexture(p1, col, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionColorTexture(p2, col, new Vector2(1, 0)));
+                _vertexBuffer[vertIdx++] = new VertexPositionColorTexture(p0, col, new Vector2(0, 1));
+                _vertexBuffer[vertIdx++] = new VertexPositionColorTexture(p1, col, new Vector2(1, 1));
+                _vertexBuffer[vertIdx++] = new VertexPositionColorTexture(p2, col, new Vector2(1, 0));
 
-                vertices.Add(new VertexPositionColorTexture(p0, col, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionColorTexture(p2, col, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionColorTexture(p3, col, new Vector2(0, 0)));
+                _vertexBuffer[vertIdx++] = new VertexPositionColorTexture(p0, col, new Vector2(0, 1));
+                _vertexBuffer[vertIdx++] = new VertexPositionColorTexture(p2, col, new Vector2(1, 0));
+                _vertexBuffer[vertIdx++] = new VertexPositionColorTexture(p3, col, new Vector2(0, 0));
             }
 
             foreach (var pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                device.DrawUserPrimitives(PrimitiveType.TriangleList, vertices.ToArray(), 0, vertices.Count / 3);
+                device.DrawUserPrimitives(PrimitiveType.TriangleList, _vertexBuffer, 0, vertIdx / 3);
             }
 
             // Restore defaults

@@ -37,6 +37,7 @@ namespace BuildMechanic.Tools
         public bool IsOperating { get; private set; }
         public float ArcFlickerIntensity { get; private set; }
 
+        private readonly Random _rng = new Random();
         private KeyboardState _prevKbd;
         private MouseState _prevMouse;
 
@@ -103,7 +104,7 @@ namespace BuildMechanic.Tools
                     break;
 
                 case ToolType.ImpactDriver:
-                    if (isLeftMouseDown && HoveredBolt != null)
+                    if (isLeftMouseDown && HoveredBolt != null && (HoveredPlate == null || HoveredPlate.State == PlateMountState.Mounted))
                     {
                         IsOperating = true;
                         AudioManager.Instance?.PlayDriverLoop(true);
@@ -169,8 +170,8 @@ namespace BuildMechanic.Tools
                         IsOperating = true;
                         AudioManager.Instance?.PlayWelderLoop(true);
 
-                        // Dynamic arc light flicker
-                        ArcFlickerIntensity = (float)new Random().NextDouble() * 0.4f + 0.6f;
+                        // Dynamic arc light flicker using reusable RNG
+                        ArcFlickerIntensity = (float)_rng.NextDouble() * 0.4f + 0.6f;
 
                         // Little arc sparks
                         sparks?.Emit(HitPoint, Vector3.Up, 1);
@@ -201,7 +202,25 @@ namespace BuildMechanic.Tools
 
             float closestDist = float.MaxValue;
 
-            // 1. Check Bolts first (higher priority for precision)
+            // When Pry Bar is active, prioritize plate detection directly
+            if (ActiveTool == ToolType.PryBar)
+            {
+                foreach (var plate in chassis.Plates)
+                {
+                    if (plate.RayIntersects(ray, out float dist))
+                    {
+                        if (dist < closestDist)
+                        {
+                            closestDist = dist;
+                            HoveredPlate = plate;
+                            HitPoint = ray.Position + ray.Direction * dist;
+                        }
+                    }
+                }
+                return;
+            }
+
+            // 1. Check Bolts first (highest precision when servicing fasteners)
             foreach (var plate in chassis.Plates)
             {
                 Matrix plateWorld = plate.GetWorldMatrix();

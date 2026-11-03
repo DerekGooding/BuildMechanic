@@ -66,7 +66,7 @@ namespace BuildMechanic.Graphics
                 indices.Add((ushort)(startIndex + 3));
             }
 
-            // 6 faces
+            // 6 faces with proper outward normals
             AddFace(Vector3.Forward, Vector3.Up, Vector3.Right, w, h, d);
             AddFace(Vector3.Backward, Vector3.Up, Vector3.Left, w, h, d);
             AddFace(Vector3.Right, Vector3.Up, Vector3.Backward, d, h, w);
@@ -112,6 +112,7 @@ namespace BuildMechanic.Graphics
             for (int i = 0; i < segments; i++)
             {
                 ushort b = (ushort)(i * 2);
+                // Clockwise outward facing triangles
                 indices.Add(b);
                 indices.Add((ushort)(b + 1));
                 indices.Add((ushort)(b + 3));
@@ -121,7 +122,7 @@ namespace BuildMechanic.Graphics
                 indices.Add((ushort)(b + 2));
             }
 
-            // Caps
+            // Top Cap (+Y)
             ushort topCenterIdx = (ushort)vertices.Count;
             vertices.Add(new VertexPositionNormalTexture(new Vector3(0, halfH, 0), Vector3.Up, new Vector2(0.5f, 0.5f)));
 
@@ -138,6 +139,25 @@ namespace BuildMechanic.Graphics
                 indices.Add(topCenterIdx);
                 indices.Add((ushort)(topCenterIdx + 1 + i));
                 indices.Add((ushort)(topCenterIdx + 2 + i));
+            }
+
+            // Bottom Cap (-Y)
+            ushort botCenterIdx = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(new Vector3(0, -halfH, 0), Vector3.Down, new Vector2(0.5f, 0.5f)));
+
+            for (int i = 0; i <= segments; i++)
+            {
+                float angle = (float)i / segments * MathF.PI * 2f;
+                float x = MathF.Cos(angle) * radius;
+                float z = MathF.Sin(angle) * radius;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(x, -halfH, z), Vector3.Down, new Vector2(x / radius * 0.5f + 0.5f, z / radius * 0.5f + 0.5f)));
+            }
+
+            for (int i = 0; i < segments; i++)
+            {
+                indices.Add(botCenterIdx);
+                indices.Add((ushort)(botCenterIdx + 2 + i));
+                indices.Add((ushort)(botCenterIdx + 1 + i));
             }
 
             var vb = new VertexBuffer(device, typeof(VertexPositionNormalTexture), vertices.Count, BufferUsage.WriteOnly);
@@ -160,7 +180,7 @@ namespace BuildMechanic.Graphics
             var vertices = new List<VertexPositionNormalTexture>();
             var indices = new List<ushort>();
 
-            // 6-sided Hex Head
+            // 6-sided Hex Head with OUTWARD normals
             int segments = 6;
             for (int i = 0; i < segments; i++)
             {
@@ -172,7 +192,8 @@ namespace BuildMechanic.Graphics
                 Vector3 p2 = new Vector3(MathF.Cos(a2) * headRadius, headHeight, MathF.Sin(a2) * headRadius);
                 Vector3 p3 = new Vector3(MathF.Cos(a1) * headRadius, headHeight, MathF.Sin(a1) * headRadius);
 
-                Vector3 normal = Vector3.Normalize(Vector3.Cross(p1 - p0, p3 - p0));
+                // Up x Tangent points OUTWARD
+                Vector3 normal = Vector3.Normalize(Vector3.Cross(p3 - p0, p1 - p0));
 
                 ushort start = (ushort)vertices.Count;
                 vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
@@ -180,16 +201,17 @@ namespace BuildMechanic.Graphics
                 vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
                 vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
 
+                // Clockwise facing outward
                 indices.Add(start);
-                indices.Add((ushort)(start + 1));
                 indices.Add((ushort)(start + 2));
+                indices.Add((ushort)(start + 1));
 
                 indices.Add(start);
-                indices.Add((ushort)(start + 2));
                 indices.Add((ushort)(start + 3));
+                indices.Add((ushort)(start + 2));
             }
 
-            // Top face of head
+            // Top face of head (+Y)
             ushort centerIdx = (ushort)vertices.Count;
             vertices.Add(new VertexPositionNormalTexture(new Vector3(0, headHeight, 0), Vector3.Up, new Vector2(0.5f, 0.5f)));
             for (int i = 0; i <= segments; i++)
@@ -227,12 +249,12 @@ namespace BuildMechanic.Graphics
                 vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
 
                 indices.Add(start);
-                indices.Add((ushort)(start + 1));
                 indices.Add((ushort)(start + 2));
+                indices.Add((ushort)(start + 1));
 
                 indices.Add(start);
-                indices.Add((ushort)(start + 2));
                 indices.Add((ushort)(start + 3));
+                indices.Add((ushort)(start + 2));
             }
 
             var vb = new VertexBuffer(device, typeof(VertexPositionNormalTexture), vertices.Count, BufferUsage.WriteOnly);

@@ -56,11 +56,16 @@ namespace BuildMechanic.Simulation
 
         public Vector3 CurrentPosition => Vector3.Lerp(DetachedPosition, MountedPosition, MathHelper.SmoothStep(0f, 1f, MountTransition));
 
+        public Matrix GetRotationMatrix()
+        {
+            float tilt = (1.0f - MountTransition) * 0.25f;
+            return Matrix.CreateRotationX(tilt);
+        }
+
         public Matrix GetWorldMatrix()
         {
             // Slight tilt when detached for better inspection
-            float tilt = (1.0f - MountTransition) * 0.25f;
-            return Matrix.CreateRotationX(tilt) * Matrix.CreateTranslation(CurrentPosition);
+            return GetRotationMatrix() * Matrix.CreateTranslation(CurrentPosition);
         }
 
         public BoundingBox GetBoundingBox()

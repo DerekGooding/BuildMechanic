@@ -9,7 +9,25 @@ namespace BuildMechanic.Gameplay
     public class ContractObjective
     {
         public string Description { get; set; }
-        public Func<MechChassis, bool> IsCompleted { get; set; }
+        public Func<MechChassis, bool> Condition { get; set; }
+        public bool LatchOnceDone { get; set; }
+        public bool IsLatched { get; set; }
+
+        public bool Evaluate(MechChassis chassis)
+        {
+            if (LatchOnceDone && IsLatched) return true;
+            bool met = Condition != null && Condition(chassis);
+            if (LatchOnceDone && met)
+            {
+                IsLatched = true;
+            }
+            return met;
+        }
+
+        public void Reset()
+        {
+            IsLatched = false;
+        }
     }
 
     public class Contract
@@ -19,7 +37,15 @@ namespace BuildMechanic.Gameplay
         public int Reward { get; set; }
         public List<ContractObjective> Objectives { get; set; } = new List<ContractObjective>();
 
-        public bool AllCompleted(MechChassis chassis) => Objectives.All(obj => obj.IsCompleted(chassis));
+        public bool AllCompleted(MechChassis chassis) => Objectives.All(obj => obj.Evaluate(chassis));
+
+        public void Reset()
+        {
+            foreach (var obj in Objectives)
+            {
+                obj.Reset();
+            }
+        }
     }
 
     public class ContractManager
@@ -35,7 +61,7 @@ namespace BuildMechanic.Gameplay
 
             ActiveContract = new Contract
             {
-                Title = "Vanguard Titan — Torso Armor Overhaul",
+                Title = "Vanguard Titan - Torso Armor Overhaul",
                 Client = "Ironclad Mercenary Corps",
                 Reward = 4500,
                 Objectives = new List<ContractObjective>
@@ -43,35 +69,51 @@ namespace BuildMechanic.Gameplay
                     new ContractObjective
                     {
                         Description = "Unscrew Left Breastplate (4/4 bolts)",
-                        IsCompleted = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.AllBoltsRemoved
+                        LatchOnceDone = true,
+                        Condition = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.AllBoltsRemoved
                     },
                     new ContractObjective
                     {
-                        Description = "Detach damaged Breastplate for servicing",
-                        IsCompleted = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.State == PlateMountState.Detached
+                        Description = "Detach damaged Breastplate onto workbench",
+                        LatchOnceDone = true,
+                        Condition = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.State == PlateMountState.Detached
                     },
                     new ContractObjective
                     {
                         Description = "Grind out fracture into prepped V-groove",
-                        IsCompleted = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.Cracks.All(cr => cr.Stage >= CrackStage.PreppedGroove)
+                        LatchOnceDone = true,
+                        Condition = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.Cracks.All(cr => cr.Stage >= CrackStage.PreppedGroove)
                     },
                     new ContractObjective
                     {
                         Description = "Weld the joint seam with MIG torch",
-                        IsCompleted = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.Cracks.All(cr => cr.Stage >= CrackStage.WeldedBead)
+                        LatchOnceDone = true,
+                        Condition = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.Cracks.All(cr => cr.Stage >= CrackStage.WeldedBead)
                     },
                     new ContractObjective
                     {
                         Description = "Grind weld flush (100% Structural Integrity)",
-                        IsCompleted = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.Cracks.All(cr => cr.Stage == CrackStage.FlushFinished)
+                        LatchOnceDone = true,
+                        Condition = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.Cracks.All(cr => cr.Stage == CrackStage.FlushFinished)
                     },
                     new ContractObjective
                     {
                         Description = "Reinstall Breastplate & Torque all 4 bolts",
-                        IsCompleted = c => c.LeftTorsoPlate != null && c.LeftTorsoPlate.State == PlateMountState.Mounted && c.LeftTorsoPlate.AllBoltsTorqued && c.LeftTorsoPlate.IsCrackRepaired
+                        LatchOnceDone = false, // Must be currently mounted and torqued to finish
+                        Condition = c => c.LeftTorsoPlate != null &&
+                                         c.LeftTorsoPlate.State == PlateMountState.Mounted &&
+                                         c.LeftTorsoPlate.AllBoltsTorqued &&
+                                         c.LeftTorsoPlate.IsCrackRepaired
                     }
                 }
             };
+        }
+
+        public void ResetContract()
+        {
+            IsFinished = false;
+            RewardClaimed = false;
+            ActiveContract?.Reset();
         }
 
         public void Update(MechChassis chassis)
