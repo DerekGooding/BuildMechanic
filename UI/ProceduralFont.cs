@@ -50,7 +50,7 @@ namespace BuildMechanic.UI
             _fontTexture.SetData(colorData);
         }
 
-        private static char NormalizeChar(char c)
+        public static char NormalizeChar(char c)
         {
             return c switch
             {
@@ -61,6 +61,12 @@ namespace BuildMechanic.UI
                 '\u2026' => '.',
                 _ => c
             };
+        }
+
+        public static float CalculateStringWidth(string text, float scale = 2.0f)
+        {
+            if (string.IsNullOrEmpty(text)) return 0f;
+            return text.Length * (CharWidth + 1) * scale;
         }
 
         public void DrawString(SpriteBatch spriteBatch, string text, Vector2 position, Color color, float scale = 2.0f)

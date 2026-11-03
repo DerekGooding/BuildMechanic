@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BuildMechanic.csproj" />
+  <Project Path="BuildMechanic.Tests/BuildMechanic.Tests.csproj" />
+</Solution>
