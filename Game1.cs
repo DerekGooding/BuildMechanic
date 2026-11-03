@@ -23,12 +23,15 @@ namespace BuildMechanic
         private MechChassis _chassis;
         private ContractManager _contractManager;
         private ToolManager _toolManager;
+        private UpgradeManager _upgradeManager;
         private SceneRenderer _sceneRenderer;
         private SparkParticleSystem _sparks;
+        private SmokeParticleSystem _smoke;
         private BasicEffect _particleEffect;
         private HUD _hud;
 
         private KeyboardState _prevKeyboard;
+        private int _sectorIndex = 0;
 
         public Game1()
         {
@@ -54,11 +57,11 @@ namespace BuildMechanic
             _camera = new OrbitCamera(GraphicsDevice);
             _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 3.2f, 0.0f, 0.12f);
 
-            _chassis = new MechChassis();
-            _chassis.Initialize();
+            _upgradeManager = new UpgradeManager();
 
+            _chassis = new MechChassis();
             _contractManager = new ContractManager();
-            _contractManager.LoadContractOne();
+            _contractManager.LoadContract(1, _chassis);
 
             _toolManager = new ToolManager();
 
@@ -71,6 +74,7 @@ namespace BuildMechanic
 
             _sceneRenderer = new SceneRenderer(GraphicsDevice);
             _sparks = new SparkParticleSystem(_sceneRenderer.GlowTexture);
+            _smoke = new SmokeParticleSystem(_sceneRenderer.GlowTexture);
 
             _particleEffect = new BasicEffect(GraphicsDevice)
             {
@@ -87,34 +91,75 @@ namespace BuildMechanic
             var mouse = Mouse.GetState();
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-            if (kbd.IsKeyDown(Keys.Escape))
+            if (kbd.IsKeyDown(Keys.Escape) && !_toolManager.IsShopOpen)
                 Exit();
 
-            // Camera shortcut hotkeys
+            // Cycle camera sectors (C key)
+            if (kbd.IsKeyDown(Keys.C) && _prevKeyboard.IsKeyUp(Keys.C))
+            {
+                _sectorIndex = (_sectorIndex + 1) % 5;
+                switch (_sectorIndex)
+                {
+                    case 0: // Torso
+                        _camera.FocusSector(new Vector3(0, 2.70f, 0.50f), 2.6f, 0.0f, 0.10f);
+                        break;
+                    case 1: // Shoulders
+                        _camera.FocusSector(new Vector3(0, 3.35f, 0.50f), 2.8f, 0.0f, 0.10f);
+                        break;
+                    case 2: // Legs
+                        _camera.FocusSector(new Vector3(0, 0.85f, 0.50f), 2.5f, 0.0f, 0.10f);
+                        break;
+                    case 3: // Left Workbench
+                        _camera.FocusSector(new Vector3(-1.80f, 2.10f, 1.20f), 2.1f, -0.22f, 0.12f);
+                        break;
+                    case 4: // Right Workbench
+                        _camera.FocusSector(new Vector3(1.80f, 2.10f, 1.20f), 2.1f, 0.22f, 0.12f);
+                        break;
+                }
+            }
+
+            // Smart camera focus hotkey (F key)
             if (kbd.IsKeyDown(Keys.F) && _prevKeyboard.IsKeyUp(Keys.F))
             {
-                if (_chassis.LeftTorsoPlate != null && _chassis.LeftTorsoPlate.State == PlateMountState.Detached)
+                if (_toolManager.HoveredPlate != null)
                 {
-                    // Focus on Workbench Inspection Jig
-                    _camera.FocusSector(new Vector3(-1.80f, 2.10f, 1.20f), 2.1f, -0.22f, 0.12f);
+                    var p = _toolManager.HoveredPlate;
+                    Vector3 focusPoint = p.State == PlateMountState.Mounted ? p.MountedPosition : p.DetachedPosition;
+                    float yaw = focusPoint.X < -0.5f ? -0.22f : (focusPoint.X > 0.5f ? 0.22f : 0f);
+                    _camera.FocusSector(focusPoint, 2.1f, yaw, 0.10f);
                 }
                 else
                 {
-                    // Focus on Torso Breastplate Workstation
-                    _camera.FocusSector(new Vector3(-0.52f, 2.70f, 0.50f), 2.2f, 0.15f, 0.10f);
+                    // Check if any plate is detached and focus on it
+                    ArmorPlate detached = null;
+                    foreach (var pl in _chassis.Plates)
+                    {
+                        if (pl.State == PlateMountState.Detached) { detached = pl; break; }
+                    }
+
+                    if (detached != null)
+                    {
+                        float yaw = detached.DetachedPosition.X < 0 ? -0.22f : 0.22f;
+                        _camera.FocusSector(detached.DetachedPosition, 2.1f, yaw, 0.12f);
+                    }
+                    else
+                    {
+                        // Focus on Torso Breastplate Workstation
+                        _camera.FocusSector(new Vector3(0, 2.70f, 0.50f), 2.5f, 0.0f, 0.10f);
+                    }
                 }
             }
+
             if (kbd.IsKeyDown(Keys.Space) && _prevKeyboard.IsKeyUp(Keys.Space))
             {
                 // Reset to full hangar gantry overview
                 _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 4.5f, 0.0f, 0.15f);
             }
 
-            // Restart contract if complete and Enter pressed
+            // Advance to next contract if complete and Enter pressed
             if (_contractManager.IsFinished && kbd.IsKeyDown(Keys.Enter) && _prevKeyboard.IsKeyUp(Keys.Enter))
             {
-                _chassis.Initialize();
-                _contractManager.LoadContractOne();
+                _contractManager.AdvanceToNextContract(_chassis);
             }
 
             // Update camera
@@ -124,13 +169,14 @@ namespace BuildMechanic
             Ray mouseRay = _camera.GetMouseRay(mouse.Position, GraphicsDevice.Viewport);
 
             // Update tool system & interactions
-            _toolManager.Update(gameTime, mouseRay, _chassis, _sparks);
+            _toolManager.Update(gameTime, mouseRay, _chassis, _sparks, _smoke);
 
             // Update physics & chassis parts
             _chassis.Update(dt);
 
             // Update VFX
             _sparks.Update(dt);
+            _smoke.Update(dt);
 
             // Update contracts & objectives
             _contractManager.Update(_chassis);
@@ -160,7 +206,15 @@ namespace BuildMechanic
                 _camera.ProjectionMatrix
             );
 
-            // 3. Draw 2D Sci-Fi HUD Overlay
+            // 3. Draw 3D Smoke Particles
+            _smoke.Draw(
+                GraphicsDevice,
+                _particleEffect,
+                _camera.ViewMatrix,
+                _camera.ProjectionMatrix
+            );
+
+            // 4. Draw 2D Sci-Fi HUD Overlay
             _hud.Draw(
                 _spriteBatch,
                 GraphicsDevice.Viewport,

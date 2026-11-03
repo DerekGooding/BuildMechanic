@@ -93,6 +93,7 @@ namespace BuildMechanic.Graphics
             DrawPlates(chassis, tools);
             DrawBolts(chassis, tools);
             DrawCracks(chassis, tools);
+            DrawActiveTool(tools);
         }
 
         private void DrawHangar()
@@ -156,9 +157,17 @@ namespace BuildMechanic.Graphics
             // Torso Inner Frame (depth 0.70m, front face at Z = +0.40m, sitting safely BEHIND mounting bosses & plates)
             DrawBox(new Vector3(0, 2.7f, 0.05f), new Vector3(1.40f, 1.40f, 0.70f));
 
-            // Mounting Boss Blocks with Tapped Holes (Z = 0.40m to 0.46m; plate back face docks at 0.46m)
+            // Torso Mounting Boss Blocks with Tapped Holes (Z = 0.40m to 0.46m; plate back face docks at 0.46m)
             DrawBox(new Vector3(-0.52f, 2.7f, 0.43f), new Vector3(0.76f, 0.96f, 0.06f));
             DrawBox(new Vector3(0.52f, 2.7f, 0.43f), new Vector3(0.76f, 0.96f, 0.06f));
+
+            // Shoulder Mounting Boss Blocks (Z = 0.40m to 0.46m)
+            DrawBox(new Vector3(-1.45f, 3.35f, 0.43f), new Vector3(0.80f, 0.50f, 0.06f));
+            DrawBox(new Vector3(1.45f, 3.35f, 0.43f), new Vector3(0.80f, 0.50f, 0.06f));
+
+            // Leg Mounting Boss Blocks (Z = 0.40m to 0.46m)
+            DrawBox(new Vector3(-0.55f, 0.85f, 0.43f), new Vector3(0.50f, 0.85f, 0.06f));
+            DrawBox(new Vector3(0.55f, 0.85f, 0.43f), new Vector3(0.50f, 0.85f, 0.06f));
 
             // Central Sternum Keel / Sternal Divider (sits flush in the gap between left & right breastplates)
             DrawBox(new Vector3(0, 2.7f, 0.44f), new Vector3(0.16f, 1.10f, 0.08f));
@@ -347,6 +356,83 @@ namespace BuildMechanic.Graphics
                         _effect.World = orient;
                         _boxMesh.Draw(_device, _effect);
                     }
+                }
+            }
+        }
+
+        private void DrawActiveTool(ToolManager tools)
+        {
+            if (tools.ActiveTool == ToolType.Scanner) return;
+            if (tools.HoveredPlate == null && tools.HoveredBolt == null && tools.HoveredCrack == null) return;
+
+            Vector3 hit = tools.HitPoint;
+            if (hit == Vector3.Zero) return;
+
+            _effect.Texture = _chassisTex;
+
+            switch (tools.ActiveTool)
+            {
+                case ToolType.ImpactDriver:
+                {
+                    float recoil = tools.IsOperating ? (float)Math.Sin(DateTime.Now.Millisecond * 0.1) * 0.008f : 0f;
+                    Vector3 bitPos = hit + new Vector3(0, 0, 0.04f + recoil);
+                    Vector3 bodyPos = hit + new Vector3(0, 0, 0.16f + recoil);
+                    Vector3 gripPos = bodyPos + new Vector3(0, -0.12f, 0.04f);
+
+                    _effect.DiffuseColor = new Vector3(0.3f, 0.3f, 0.35f);
+                    DrawCylinder(bitPos, 0.022f, 0.08f);
+
+                    _effect.DiffuseColor = new Vector3(0.9f, 0.45f, 0.1f);
+                    DrawBox(bodyPos, new Vector3(0.10f, 0.11f, 0.18f));
+
+                    _effect.DiffuseColor = new Vector3(0.2f, 0.2f, 0.2f);
+                    DrawBox(gripPos, new Vector3(0.06f, 0.14f, 0.07f));
+                    break;
+                }
+
+                case ToolType.PryBar:
+                {
+                    Vector3 bladePos = hit + new Vector3(0.05f, 0.05f, 0.04f);
+                    Vector3 handlePos = hit + new Vector3(0.18f, 0.18f, 0.18f);
+
+                    _effect.DiffuseColor = new Vector3(0.4f, 0.6f, 0.85f);
+                    DrawBox(bladePos, new Vector3(0.04f, 0.12f, 0.03f));
+                    DrawBox(handlePos, new Vector3(0.05f, 0.28f, 0.05f));
+                    break;
+                }
+
+                case ToolType.AngleGrinder:
+                {
+                    Vector3 spindlePos = hit + new Vector3(0, 0.02f, 0.06f);
+                    Vector3 discPos = hit + new Vector3(0, 0.01f, 0.02f);
+                    Vector3 bodyPos = hit + new Vector3(0.14f, 0.04f, 0.16f);
+
+                    _effect.DiffuseColor = new Vector3(0.35f, 0.32f, 0.30f);
+                    DrawCylinder(discPos, 0.08f, 0.012f);
+
+                    _effect.DiffuseColor = new Vector3(0.2f, 0.2f, 0.25f);
+                    DrawBox(spindlePos, new Vector3(0.18f, 0.04f, 0.10f));
+
+                    _effect.DiffuseColor = new Vector3(0.1f, 0.65f, 0.3f);
+                    DrawCylinder(bodyPos, 0.045f, 0.22f);
+                    break;
+                }
+
+                case ToolType.Welder:
+                {
+                    Vector3 tipPos = hit + new Vector3(0, 0.02f, 0.03f);
+                    Vector3 neckPos = hit + new Vector3(0, 0.06f, 0.10f);
+                    Vector3 handlePos = hit + new Vector3(0, 0.14f, 0.22f);
+
+                    _effect.DiffuseColor = new Vector3(0.85f, 0.55f, 0.25f);
+                    DrawCylinder(tipPos, 0.015f, 0.05f);
+
+                    _effect.DiffuseColor = new Vector3(0.7f, 0.7f, 0.75f);
+                    DrawCylinder(neckPos, 0.018f, 0.10f);
+
+                    _effect.DiffuseColor = new Vector3(0.15f, 0.15f, 0.18f);
+                    DrawCylinder(handlePos, 0.032f, 0.18f);
+                    break;
                 }
             }
         }

@@ -88,14 +88,16 @@ namespace BuildMechanic.Simulation
             return false;
         }
 
-        public bool CanDetach => State == PlateMountState.Mounted && AllBoltsRemoved;
+        public Func<ArmorPlate, bool> DetachGuard { get; set; }
+
+        public bool CanDetach => State == PlateMountState.Mounted && AllBoltsRemoved && (DetachGuard == null || DetachGuard(this));
         public bool CanMount => State == PlateMountState.Detached;
 
         public bool ToggleMount()
         {
             if (State == PlateMountState.Mounted)
             {
-                if (!AllBoltsRemoved) return false;
+                if (!AllBoltsRemoved || (DetachGuard != null && !DetachGuard(this))) return false;
                 State = PlateMountState.MovingToDetached;
                 return true;
             }

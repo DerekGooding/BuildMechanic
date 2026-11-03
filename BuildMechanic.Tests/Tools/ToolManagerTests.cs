@@ -38,6 +38,7 @@ namespace BuildMechanic.Tests.Tools
         {
             var chassis = new MechChassis();
             chassis.Initialize();
+            chassis.ConfigureDamage(new[] { "plate_torso_left" });
 
             var manager = new ToolManager();
             manager.SelectTool(ToolType.PryBar);

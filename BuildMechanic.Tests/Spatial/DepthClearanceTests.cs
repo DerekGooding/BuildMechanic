@@ -38,13 +38,17 @@ namespace BuildMechanic.Tests.Spatial
             var chassis = new MechChassis();
             chassis.Initialize();
 
+            Assert.Equal(6, chassis.Plates.Count);
+            int totalBolts = 0;
+
             float torsoFrontZ = 0.40f;
 
             foreach (var plate in chassis.Plates)
             {
                 Matrix plateWorld = plate.GetWorldMatrix();
 
-                Assert.True(plate.Bolts.Count >= 4, $"Plate {plate.Id} should have at least 4 bolts.");
+                Assert.Equal(4, plate.Bolts.Count);
+                totalBolts += plate.Bolts.Count;
 
                 foreach (var bolt in plate.Bolts)
                 {
@@ -59,6 +63,8 @@ namespace BuildMechanic.Tests.Spatial
                         $"Bolt {bolt.Id} head is recessed behind the front face of the plate! Z={worldPos.Z}");
                 }
             }
+
+            Assert.Equal(24, totalBolts);
         }
 
         [Fact]

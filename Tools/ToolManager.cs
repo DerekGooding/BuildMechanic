@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using BuildMechanic.Audio;
+using BuildMechanic.Gameplay;
 using BuildMechanic.Simulation;
 using BuildMechanic.VFX;
 
@@ -27,6 +28,7 @@ namespace BuildMechanic.Tools
     {
         public ToolType ActiveTool { get; private set; } = ToolType.Scanner;
         public DriverDirection DriverDir { get; private set; } = DriverDirection.Reverse;
+        public bool IsShopOpen { get; set; } = false;
 
         // Hovered Targets
         public ArmorPlate HoveredPlate { get; private set; }
@@ -59,11 +61,46 @@ namespace BuildMechanic.Tools
             DriverDir = (DriverDir == DriverDirection.Forward) ? DriverDirection.Reverse : DriverDirection.Forward;
         }
 
-        public void Update(GameTime gameTime, Ray ray, MechChassis chassis, SparkParticleSystem sparks)
+        public void Update(GameTime gameTime, Ray ray, MechChassis chassis, SparkParticleSystem sparks, SmokeParticleSystem smoke = null)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             KeyboardState kbd = Keyboard.GetState();
             MouseState mouse = Mouse.GetState();
+
+            // Shop hotkey toggle
+            if (kbd.IsKeyDown(Keys.U) && _prevKbd.IsKeyUp(Keys.U))
+            {
+                IsShopOpen = !IsShopOpen;
+                if (IsShopOpen) StopOperations();
+            }
+
+            if (IsShopOpen)
+            {
+                if (kbd.IsKeyDown(Keys.Escape) && _prevKbd.IsKeyUp(Keys.Escape))
+                {
+                    IsShopOpen = false;
+                }
+
+                if (kbd.IsKeyDown(Keys.F1) && _prevKbd.IsKeyUp(Keys.F1))
+                {
+                    if (UpgradeManager.Instance != null && UpgradeManager.Instance.TryUpgradeDriver())
+                        AudioManager.Instance?.PlayScannerPing();
+                }
+                if (kbd.IsKeyDown(Keys.F2) && _prevKbd.IsKeyUp(Keys.F2))
+                {
+                    if (UpgradeManager.Instance != null && UpgradeManager.Instance.TryUpgradeGrinder())
+                        AudioManager.Instance?.PlayScannerPing();
+                }
+                if (kbd.IsKeyDown(Keys.F3) && _prevKbd.IsKeyUp(Keys.F3))
+                {
+                    if (UpgradeManager.Instance != null && UpgradeManager.Instance.TryUpgradeWelder())
+                        AudioManager.Instance?.PlayScannerPing();
+                }
+
+                _prevKbd = kbd;
+                _prevMouse = mouse;
+                return;
+            }
 
             // Hotkeys 1-5
             if (kbd.IsKeyDown(Keys.D1)) SelectTool(ToolType.Scanner);
@@ -109,7 +146,8 @@ namespace BuildMechanic.Tools
                         IsOperating = true;
                         AudioManager.Instance?.PlayDriverLoop(true);
 
-                        float speed = (DriverDir == DriverDirection.Forward) ? 1.4f : -1.4f;
+                        float speedMultiplier = UpgradeManager.Instance?.GetDriverSpeed() ?? 1.0f;
+                        float speed = ((DriverDir == DriverDirection.Forward) ? 1.4f : -1.4f) * speedMultiplier;
                         int result = HoveredBolt.Drive(speed * dt);
 
                         if (result == 1) // Just torqued
@@ -151,8 +189,9 @@ namespace BuildMechanic.Tools
                         // Emit sparks
                         sparks?.Emit(HitPoint, Vector3.Right, 6);
 
+                        float grindMultiplier = UpgradeManager.Instance?.GetGrinderSpeed() ?? 1.0f;
                         // Advance grinding
-                        bool stageChanged = HoveredCrack.ApplyGrinding(dt * 0.45f);
+                        bool stageChanged = HoveredCrack.ApplyGrinding(dt * 0.45f * grindMultiplier);
                         if (stageChanged && HoveredCrack.IsRepaired)
                         {
                             AudioManager.Instance?.PlayScannerPing();
@@ -176,8 +215,12 @@ namespace BuildMechanic.Tools
                         // Little arc sparks
                         sparks?.Emit(HitPoint, Vector3.Up, 1);
 
+                        // Smoke emission
+                        smoke?.Emit(HitPoint, 1);
+
+                        float weldMultiplier = UpgradeManager.Instance?.GetWelderSpeed() ?? 1.0f;
                         // Advance welding
-                        bool stageChanged = HoveredCrack.ApplyWelding(dt * 0.35f);
+                        bool stageChanged = HoveredCrack.ApplyWelding(dt * 0.35f * weldMultiplier);
                         if (stageChanged)
                         {
                             AudioManager.Instance?.PlayScannerPing();
