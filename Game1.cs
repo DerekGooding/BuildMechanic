@@ -52,7 +52,7 @@ namespace BuildMechanic
             _audioManager.Initialize();
 
             _camera = new OrbitCamera(GraphicsDevice);
-            _camera.FocusSector(new Vector3(0, 2.6f, 0.4f), 3.0f, 0.0f, 0.12f);
+            _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 3.2f, 0.0f, 0.12f);
 
             _chassis = new MechChassis();
             _chassis.Initialize();
@@ -93,13 +93,21 @@ namespace BuildMechanic
             // Camera shortcut hotkeys
             if (kbd.IsKeyDown(Keys.F) && _prevKeyboard.IsKeyUp(Keys.F))
             {
-                // Focus on Torso Work Area
-                _camera.FocusSector(new Vector3(-0.52f, 2.7f, 0.5f), 2.2f, 0.15f, 0.10f);
+                if (_chassis.LeftTorsoPlate != null && _chassis.LeftTorsoPlate.State == PlateMountState.Detached)
+                {
+                    // Focus on Workbench Inspection Jig
+                    _camera.FocusSector(new Vector3(-1.80f, 2.10f, 1.20f), 2.1f, -0.22f, 0.12f);
+                }
+                else
+                {
+                    // Focus on Torso Breastplate Workstation
+                    _camera.FocusSector(new Vector3(-0.52f, 2.70f, 0.50f), 2.2f, 0.15f, 0.10f);
+                }
             }
             if (kbd.IsKeyDown(Keys.Space) && _prevKeyboard.IsKeyUp(Keys.Space))
             {
                 // Reset to full hangar gantry overview
-                _camera.FocusSector(new Vector3(0, 2.6f, 0.4f), 4.4f, 0.0f, 0.15f);
+                _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 4.5f, 0.0f, 0.15f);
             }
 
             // Restart contract if complete and Enter pressed

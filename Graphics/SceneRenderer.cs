@@ -114,8 +114,35 @@ namespace BuildMechanic.Graphics
             // Overhead Crane Beam
             DrawBox(new Vector3(0, 7.8f, -0.5f), new Vector3(7.0f, 0.5f, 0.6f));
 
-            // Workbench / Inspection Jig (left side where detached plate rests)
-            DrawBox(new Vector3(-1.8f, 1.0f, 1.2f), new Vector3(1.2f, 2.0f, 0.8f));
+            // Left & Right Workstations / Inspection Jigs with cradle fixtures
+            DrawWorkstation(new Vector3(-1.80f, 0, 1.20f));
+            DrawWorkstation(new Vector3(1.80f, 0, 1.20f));
+        }
+
+        private void DrawWorkstation(Vector3 basePos)
+        {
+            _effect.Texture = _chassisTex;
+            _effect.DiffuseColor = new Vector3(0.70f, 0.72f, 0.76f);
+
+            // Table base cabinet (height 1.20m, top surface at Y = 1.20m)
+            DrawBox(basePos + new Vector3(0, 0.60f, 0), new Vector3(1.40f, 1.20f, 0.90f));
+
+            // Table top steel slab
+            _effect.DiffuseColor = new Vector3(0.50f, 0.52f, 0.56f);
+            DrawBox(basePos + new Vector3(0, 1.22f, 0), new Vector3(1.48f, 0.05f, 0.96f));
+
+            // Inspection jig support uprights
+            _effect.DiffuseColor = new Vector3(0.85f, 0.85f, 0.90f);
+            DrawBox(basePos + new Vector3(-0.35f, 1.42f, -0.04f), new Vector3(0.08f, 0.35f, 0.12f));
+            DrawBox(basePos + new Vector3(0.35f, 1.42f, -0.04f), new Vector3(0.08f, 0.35f, 0.12f));
+
+            // Inspection jig cradle crossbar (plate rests in this cradle at Y = 1.59m)
+            DrawBox(basePos + new Vector3(0, 1.54f, -0.02f), new Vector3(0.80f, 0.06f, 0.14f));
+
+            // Rubber resting pads on cradle
+            _effect.DiffuseColor = new Vector3(0.25f, 0.25f, 0.28f);
+            DrawBox(basePos + new Vector3(-0.25f, 1.58f, -0.01f), new Vector3(0.12f, 0.03f, 0.16f));
+            DrawBox(basePos + new Vector3(0.25f, 1.58f, -0.01f), new Vector3(0.12f, 0.03f, 0.16f));
         }
 
         private void DrawChassis(MechChassis chassis)
@@ -123,30 +150,33 @@ namespace BuildMechanic.Graphics
             _effect.Texture = _chassisTex;
             _effect.DiffuseColor = new Vector3(0.85f, 0.85f, 0.90f);
 
-            // Central Core / Pelvis
-            DrawBox(new Vector3(0, 1.4f, 0), new Vector3(1.2f, 1.0f, 1.0f));
+            // Central Core / Pelvis (depth 0.80, sitting at Z = 0)
+            DrawBox(new Vector3(0, 1.4f, 0), new Vector3(1.1f, 1.0f, 0.8f));
 
-            // Torso Inner Frame (under plates)
-            DrawBox(new Vector3(0, 2.7f, 0.15f), new Vector3(1.6f, 1.6f, 0.85f));
+            // Torso Inner Frame (depth 0.70m, front face at Z = +0.40m, sitting safely BEHIND mounting bosses & plates)
+            DrawBox(new Vector3(0, 2.7f, 0.05f), new Vector3(1.40f, 1.40f, 0.70f));
 
-            // Cockpit Canopy / Armored Pod
-            DrawBox(new Vector3(0, 3.7f, 0.3f), new Vector3(0.8f, 0.6f, 0.7f));
+            // Mounting Boss Blocks with Tapped Holes (Z = 0.40m to 0.46m; plate back face docks at 0.46m)
+            DrawBox(new Vector3(-0.52f, 2.7f, 0.43f), new Vector3(0.76f, 0.96f, 0.06f));
+            DrawBox(new Vector3(0.52f, 2.7f, 0.43f), new Vector3(0.76f, 0.96f, 0.06f));
 
-            // Left & Right Shoulder Mount Armatures
-            DrawBox(new Vector3(-1.4f, 3.4f, 0.1f), new Vector3(1.0f, 0.5f, 0.6f));
-            DrawBox(new Vector3(1.4f, 3.4f, 0.1f), new Vector3(1.0f, 0.5f, 0.6f));
+            // Central Sternum Keel / Sternal Divider (sits flush in the gap between left & right breastplates)
+            DrawBox(new Vector3(0, 2.7f, 0.44f), new Vector3(0.16f, 1.10f, 0.08f));
+
+            // Cockpit Canopy / Armored Pod (sits above the chest from Y = 3.375m to 3.925m)
+            DrawBox(new Vector3(0, 3.65f, 0.20f), new Vector3(0.75f, 0.55f, 0.60f));
+
+            // Left & Right Shoulder Mount Armatures (positioned outside the plate width)
+            DrawBox(new Vector3(-1.45f, 3.35f, 0.15f), new Vector3(0.9f, 0.5f, 0.6f));
+            DrawBox(new Vector3(1.45f, 3.35f, 0.15f), new Vector3(0.9f, 0.5f, 0.6f));
 
             // Left & Right Arm Pylons
-            DrawCylinder(new Vector3(-2.0f, 2.5f, 0.1f), 0.25f, 1.4f);
-            DrawCylinder(new Vector3(2.0f, 2.5f, 0.1f), 0.25f, 1.4f);
+            DrawCylinder(new Vector3(-2.0f, 2.5f, 0.15f), 0.25f, 1.4f);
+            DrawCylinder(new Vector3(2.0f, 2.5f, 0.15f), 0.25f, 1.4f);
 
             // Leg Actuator Struts
-            DrawCylinder(new Vector3(-0.6f, 0.7f, 0), 0.22f, 1.4f);
-            DrawCylinder(new Vector3(0.6f, 0.7f, 0), 0.22f, 1.4f);
-
-            // Mounting Boss Blocks with Tapped Holes (where plates dock)
-            DrawBox(new Vector3(-0.52f, 2.7f, 0.44f), new Vector3(0.7f, 0.9f, 0.06f));
-            DrawBox(new Vector3(0.52f, 2.7f, 0.44f), new Vector3(0.7f, 0.9f, 0.06f));
+            DrawCylinder(new Vector3(-0.55f, 0.7f, 0), 0.22f, 1.4f);
+            DrawCylinder(new Vector3(0.55f, 0.7f, 0), 0.22f, 1.4f);
         }
 
         private void DrawPlates(MechChassis chassis, ToolManager tools)
