@@ -213,53 +213,12 @@ namespace BuildMechanic.Audio
         /// <summary>
         /// Generates heavy steel plate seating / mounting clunk.
         /// </summary>
-        public static byte[] GeneratePlateMount(float duration = 0.6f)
-        {
-            int totalSamples = (int)(SampleRate * duration);
-            float[] buffer = new float[totalSamples];
-            var rng = new Random(222);
-
-            for (int i = 0; i < totalSamples; i++)
-            {
-                float t = (float)i / SampleRate;
-                float env = MathF.Exp(-t * 9.0f);
-
-                // Sub-bass thump (80Hz) + metal plate resonance (320Hz, 740Hz)
-                float thud = MathF.Sin(2.0f * MathF.PI * 80.0f * t) * 0.6f +
-                             MathF.Sin(2.0f * MathF.PI * 320.0f * t) * 0.35f * MathF.Exp(-t * 14.0f) +
-                             MathF.Sin(2.0f * MathF.PI * 740.0f * t) * 0.2f * MathF.Exp(-t * 22.0f);
-
-                float rattle = ((float)rng.NextDouble() * 2.0f - 1.0f) * MathF.Exp(-t * 30.0f) * 0.4f;
-
-                buffer[i] = (thud + rattle) * env * 0.9f;
-            }
-
-            return CreateWav(buffer);
-        }
+        public static byte[] GeneratePlateMount(float duration = 0.6f) => WorkshopSounds.GeneratePlateMount(duration);
 
         /// <summary>
         /// Generates plate unseating / pry release metallic ring.
         /// </summary>
-        public static byte[] GeneratePlateDetach(float duration = 0.5f)
-        {
-            int totalSamples = (int)(SampleRate * duration);
-            float[] buffer = new float[totalSamples];
-
-            for (int i = 0; i < totalSamples; i++)
-            {
-                float t = (float)i / SampleRate;
-                float env = MathF.Exp(-t * 8.0f);
-
-                // Sliding latch release + metallic ring (440Hz, 880Hz, 1320Hz)
-                float tone = MathF.Sin(2.0f * MathF.PI * 440.0f * t) * 0.5f +
-                             MathF.Sin(2.0f * MathF.PI * 880.0f * t) * 0.3f +
-                             MathF.Sin(2.0f * MathF.PI * 1320.0f * t) * 0.15f;
-
-                buffer[i] = tone * env * 0.7f;
-            }
-
-            return CreateWav(buffer);
-        }
+        public static byte[] GeneratePlateDetach(float duration = 0.5f) => WorkshopSounds.GeneratePlateDetach(duration);
 
         /// <summary>
         /// Generates a sleek sci-fi diagnostic AR scanner chirp.

@@ -17,6 +17,11 @@ namespace BuildMechanic.Audio
         private SoundEffect _plateDetachSfx;
         private SoundEffect _scannerPingSfx;
         private SoundEffect _contractSuccessSfx;
+        private SoundEffect _hydraulicHissSfx;
+        private SoundEffect _multimeterBeepSfx;
+        private SoundEffect _reactorSpoolSfx;
+        private SoundEffect _klaxonSfx;
+        private SoundEffect _paintSpraySfx;
 
         // Loop instances for sustained tool interactions
         private SoundEffectInstance _driverLoopInstance;
@@ -44,6 +49,12 @@ namespace BuildMechanic.Audio
                 _plateDetachSfx = LoadFromBytes(SoundGenerator.GeneratePlateDetach(0.5f));
                 _scannerPingSfx = LoadFromBytes(SoundGenerator.GenerateScannerPing(0.35f));
                 _contractSuccessSfx = LoadFromBytes(SoundGenerator.GenerateContractSuccess(1.2f));
+
+                _hydraulicHissSfx = LoadFromBytes(WorkshopSounds.GenerateHydraulicHiss(1.0f));
+                _multimeterBeepSfx = LoadFromBytes(WorkshopSounds.GenerateMultimeterBeep(0.22f));
+                _reactorSpoolSfx = LoadFromBytes(WorkshopSounds.GenerateReactorSpool(1.5f));
+                _klaxonSfx = LoadFromBytes(WorkshopSounds.GenerateKlaxon(0.75f));
+                _paintSpraySfx = LoadFromBytes(WorkshopSounds.GeneratePaintSpray(0.8f));
 
                 // Initialize loopers
                 if (_driverRunSfx != null)
@@ -155,6 +166,31 @@ namespace BuildMechanic.Audio
             _contractSuccessSfx?.Play(MasterVolume, 0f, 0f);
         }
 
+        public void PlayHydraulicHiss()
+        {
+            _hydraulicHissSfx?.Play(MasterVolume * 0.8f, 0f, 0f);
+        }
+
+        public void PlayMultimeterBeep()
+        {
+            _multimeterBeepSfx?.Play(MasterVolume * 0.75f, 0f, 0f);
+        }
+
+        public void PlayReactorSpool()
+        {
+            _reactorSpoolSfx?.Play(MasterVolume * 0.9f, 0f, 0f);
+        }
+
+        public void PlayKlaxon()
+        {
+            _klaxonSfx?.Play(MasterVolume * 0.95f, 0f, 0f);
+        }
+
+        public void PlayPaintSpray()
+        {
+            _paintSpraySfx?.Play(MasterVolume * 0.85f, 0f, 0f);
+        }
+
         public void StopAllLoops()
         {
             _driverLoopInstance?.Stop();
@@ -178,6 +214,11 @@ namespace BuildMechanic.Audio
             _plateDetachSfx?.Dispose();
             _scannerPingSfx?.Dispose();
             _contractSuccessSfx?.Dispose();
+            _hydraulicHissSfx?.Dispose();
+            _multimeterBeepSfx?.Dispose();
+            _reactorSpoolSfx?.Dispose();
+            _klaxonSfx?.Dispose();
+            _paintSpraySfx?.Dispose();
         }
     }
 }

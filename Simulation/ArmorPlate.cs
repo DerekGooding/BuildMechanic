@@ -25,6 +25,10 @@ namespace BuildMechanic.Simulation
         public List<Bolt> Bolts { get; set; } = new List<Bolt>();
         public List<CrackSegment> Cracks { get; set; } = new List<CrackSegment>();
 
+        public Color BaseCoatingColor { get; set; } = Color.White;
+        public string StencilId { get; set; } = null;
+        public float CoatingWear { get; set; } = 0.0f;
+
         public PlateMountState State { get; private set; } = PlateMountState.Mounted;
         public float MountTransition { get; private set; } = 1.0f; // 1.0 = Mounted, 0.0 = Detached
 

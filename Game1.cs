@@ -24,6 +24,7 @@ namespace BuildMechanic
         private ContractManager _contractManager;
         private ToolManager _toolManager;
         private UpgradeManager _upgradeManager;
+        private ProvingGroundsManager _proving;
         private SceneRenderer _sceneRenderer;
         private SparkParticleSystem _sparks;
         private SmokeParticleSystem _smoke;
@@ -64,6 +65,7 @@ namespace BuildMechanic
             _contractManager.LoadContract(1, _chassis);
 
             _toolManager = new ToolManager();
+            _proving = new ProvingGroundsManager();
 
             base.Initialize();
         }
@@ -156,9 +158,16 @@ namespace BuildMechanic
                 _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 4.5f, 0.0f, 0.15f);
             }
 
+            // Trigger Proving Grounds live testing cycle (T key)
+            if (kbd.IsKeyDown(Keys.T) && _prevKeyboard.IsKeyUp(Keys.T))
+            {
+                _proving.TriggerTest(_chassis);
+            }
+
             // Advance to next contract if complete and Enter pressed
             if (_contractManager.IsFinished && kbd.IsKeyDown(Keys.Enter) && _prevKeyboard.IsKeyUp(Keys.Enter))
             {
+                _proving.Reset();
                 _contractManager.AdvanceToNextContract(_chassis);
             }
 
@@ -173,6 +182,9 @@ namespace BuildMechanic
 
             // Update physics & chassis parts
             _chassis.Update(dt);
+
+            // Update Proving Grounds engine
+            _proving.Update(dt, _chassis);
 
             // Update VFX
             _sparks.Update(dt);
@@ -190,12 +202,13 @@ namespace BuildMechanic
             // Clear to industrial hangar atmosphere
             GraphicsDevice.Clear(new Color(22, 25, 30));
 
-            // 1. Draw 3D Hangar, Mech Chassis, Armor Plates, Hex Bolts, and Cracks
+            // 1. Draw 3D Hangar, Mech Chassis, Armor Plates, Hex Bolts, Cracks, and Internals
             _sceneRenderer.DrawScene(
                 _camera.ViewMatrix,
                 _camera.ProjectionMatrix,
                 _chassis,
-                _toolManager
+                _toolManager,
+                _proving.ServoSineOffset
             );
 
             // 2. Draw 3D Sparks & Welding VFX
@@ -221,7 +234,8 @@ namespace BuildMechanic
                 _toolManager,
                 _contractManager,
                 _chassis,
-                _camera
+                _camera,
+                _proving
             );
 
             base.Draw(gameTime);
