@@ -148,9 +148,9 @@ namespace BuildMechanic.Inspector
             catalog.RegisterModel(InspectableModel.FromSimpleMesh(
                 "Forged Crane Swivel Hook",
                 ModelCategory.HangarEnvironment,
-                "Heavy forged alloy steel swivel crane hook for gantry rigging.",
+                "Heavy forged alloy steel swivel crane hook with thrust bearing collar, load saddle, and spring-loaded safety latch.",
                 hook, chassisTex, new Vector3(0.95f, 0.75f, 0.15f),
-                new BoundingBox(new Vector3(-0.15f, -0.15f, -0.04f), new Vector3(0.15f, 0.05f, 0.04f))));
+                new BoundingBox(new Vector3(-0.16f, -0.18f, -0.04f), new Vector3(0.16f, 0.22f, 0.04f))));
 
             // Lamp Shade
             var lamp = HangarMeshBuilder.CreateLampShade(device);
