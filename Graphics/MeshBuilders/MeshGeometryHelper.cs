@@ -23,13 +23,15 @@ namespace BuildMechanic.Graphics.MeshBuilders
             Vector3 cross = Vector3.Cross(p1 - p0, p2 - p0);
             if (Vector3.Dot(cross, normal) >= 0f)
             {
-                indices.Add(s); indices.Add((ushort)(s + 1)); indices.Add((ushort)(s + 2));
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 3));
+                // When 3D cross aligns with normal, (s, s+2, s+1) and (s, s+3, s+2) project clockwise on screen
+                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
+                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
             }
             else
             {
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                // When 3D cross opposes normal, (s, s+1, s+2) and (s, s+2, s+3) project clockwise on screen
+                indices.Add(s); indices.Add((ushort)(s + 1)); indices.Add((ushort)(s + 2));
+                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 3));
             }
         }
 
@@ -59,28 +61,42 @@ namespace BuildMechanic.Graphics.MeshBuilders
             Vector3 cross = Vector3.Cross(p1 - p0, p2 - p0);
             if (Vector3.Dot(cross, normal) >= 0f)
             {
-                indices.Add(s); indices.Add((ushort)(s + 1)); indices.Add((ushort)(s + 2));
+                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
             }
             else
             {
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
+                indices.Add(s); indices.Add((ushort)(s + 1)); indices.Add((ushort)(s + 2));
             }
         }
 
         public static void AddCylinderWall(List<ushort> indices, ushort b)
         {
+            // Clockwise cylinder wall winding
+            indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
+            indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
+        }
+
+        public static void AddDoubleSidedCylinderWall(List<ushort> indices, ushort b)
+        {
+            // Outer wall (clockwise from outside)
+            indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
+            indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
+
+            // Inner wall (clockwise from inside)
             indices.Add(b); indices.Add((ushort)(b + 1)); indices.Add((ushort)(b + 3));
             indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 2));
         }
 
         public static void AddTopCapTri(List<ushort> indices, ushort center, ushort i)
         {
-            indices.Add(center); indices.Add((ushort)(center + 2 + i)); indices.Add((ushort)(center + 1 + i));
+            // Center -> 1+i -> 2+i projects clockwise on screen when viewed from above (+Y)
+            indices.Add(center); indices.Add((ushort)(center + 1 + i)); indices.Add((ushort)(center + 2 + i));
         }
 
         public static void AddBottomCapTri(List<ushort> indices, ushort center, ushort i)
         {
-            indices.Add(center); indices.Add((ushort)(center + 1 + i)); indices.Add((ushort)(center + 2 + i));
+            // Center -> 2+i -> 1+i projects clockwise on screen when viewed from below (-Y)
+            indices.Add(center); indices.Add((ushort)(center + 2 + i)); indices.Add((ushort)(center + 1 + i));
         }
     }
 }

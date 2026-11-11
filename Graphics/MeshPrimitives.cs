@@ -103,14 +103,7 @@ namespace BuildMechanic.Graphics
             for (int i = 0; i < segments; i++)
             {
                 ushort b = (ushort)(i * 2);
-                // Clockwise outward facing triangles
-                indices.Add(b);
-                indices.Add((ushort)(b + 1));
-                indices.Add((ushort)(b + 3));
-
-                indices.Add(b);
-                indices.Add((ushort)(b + 3));
-                indices.Add((ushort)(b + 2));
+                MeshGeometryHelper.AddCylinderWall(indices, b);
             }
 
             // Top Cap (+Y)

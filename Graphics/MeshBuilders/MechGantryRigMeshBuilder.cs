@@ -51,14 +51,41 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 float ca = MathF.Cos(a), sa = MathF.Sin(a);
                 Vector3 n = new Vector3(ca, 0, sa);
 
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * radius, 0, sa * radius), n, new Vector2((float)i / segs, 1)));
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * radius, -length, sa * radius), n, new Vector2((float)i / segs, 0)));
+                // Bottom (-length) followed by top (0) so AddCylinderWall matches standard winding
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * radius, -length, sa * radius), n, new Vector2((float)i / segs, 1)));
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * radius, 0, sa * radius), n, new Vector2((float)i / segs, 0)));
             }
 
             for (int i = 0; i < segs; i++)
             {
                 ushort b = (ushort)(i * 2);
                 MeshGeometryHelper.AddCylinderWall(indices, b);
+            }
+
+            // Top clevis cap (y = 0)
+            ushort topCenter = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(Vector3.Zero, Vector3.Up, new Vector2(0.5f, 0.5f)));
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * radius, 0, MathF.Sin(a) * radius), Vector3.Up, Vector2.Zero));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                MeshGeometryHelper.AddTopCapTri(indices, topCenter, (ushort)i);
+            }
+
+            // Bottom clevis cap (y = -length)
+            ushort botCenter = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(new Vector3(0, -length, 0), Vector3.Down, new Vector2(0.5f, 0.5f)));
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * radius, -length, MathF.Sin(a) * radius), Vector3.Down, Vector2.Zero));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                MeshGeometryHelper.AddBottomCapTri(indices, botCenter, (ushort)i);
             }
 
             return BuildMesh(device, vertices, indices);
@@ -70,20 +97,29 @@ namespace BuildMechanic.Graphics.MeshBuilders
             var indices = new List<ushort>();
             int segs = 12;
 
-            for (int i = 0; i <= segs; i++)
-            {
-                float a = (float)i / segs * MathF.PI * 2f;
-                float ca = MathF.Cos(a), sa = MathF.Sin(a);
-                Vector3 n = new Vector3(0, ca, sa);
-
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(0, ca * radius, sa * radius), n, new Vector2((float)i / segs, 1)));
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(length, ca * radius, sa * radius), n, new Vector2((float)i / segs, 0)));
-            }
+            Vector3 cLeft = Vector3.Zero;
+            Vector3 cRight = new Vector3(length, 0, 0);
 
             for (int i = 0; i < segs; i++)
             {
-                ushort b = (ushort)(i * 2);
-                MeshGeometryHelper.AddCylinderWall(indices, b);
+                float a1 = (float)i / segs * MathF.PI * 2f;
+                float a2 = (float)(i + 1) / segs * MathF.PI * 2f;
+                float ca1 = MathF.Cos(a1), sa1 = MathF.Sin(a1);
+                float ca2 = MathF.Cos(a2), sa2 = MathF.Sin(a2);
+
+                Vector3 p0 = new Vector3(0, ca1 * radius, sa1 * radius);
+                Vector3 p1 = new Vector3(length, ca1 * radius, sa1 * radius);
+                Vector3 p2 = new Vector3(length, ca2 * radius, sa2 * radius);
+                Vector3 p3 = new Vector3(0, ca2 * radius, sa2 * radius);
+
+                Vector3 n = Vector3.Normalize(new Vector3(0, (ca1 + ca2) * 0.5f, (sa1 + sa2) * 0.5f));
+
+                // Cylindrical boom tube
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, n);
+                // Base mounting flange (x = 0)
+                MeshGeometryHelper.AddTri(vertices, indices, cLeft, p0, p3, Vector3.Left, Vector2.Zero, Vector2.Zero, Vector2.Zero);
+                // Distal connector head (x = length)
+                MeshGeometryHelper.AddTri(vertices, indices, cRight, p2, p1, Vector3.Right, Vector2.Zero, Vector2.Zero, Vector2.Zero);
             }
 
             return BuildMesh(device, vertices, indices);

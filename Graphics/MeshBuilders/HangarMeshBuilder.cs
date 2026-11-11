@@ -13,23 +13,41 @@ namespace BuildMechanic.Graphics.MeshBuilders
             var indices = new List<ushort>();
 
             int segs = 14;
-            float hookRadius = 0.14f;
-            float thickness = 0.035f;
-
-            for (int i = 0; i <= segs; i++)
-            {
-                float a = (float)i / segs * MathF.PI * 1.4f;
-                float x = MathF.Cos(a) * hookRadius;
-                float y = -MathF.Sin(a) * hookRadius;
-
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(x, y, -thickness), Vector3.Backward, new Vector2((float)i / segs, 1)));
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(x, y, thickness), Vector3.Forward, new Vector2((float)i / segs, 0)));
-            }
+            float innerR = 0.10f;
+            float outerR = 0.15f;
+            float hz = 0.024f; // half thickness
 
             for (int i = 0; i < segs; i++)
             {
-                ushort b = (ushort)(i * 2);
-                MeshGeometryHelper.AddCylinderWall(indices, b);
+                float a1 = (float)i / segs * MathF.PI * 1.35f;
+                float a2 = (float)(i + 1) / segs * MathF.PI * 1.35f;
+
+                float ca1 = MathF.Cos(a1), sa1 = MathF.Sin(a1);
+                float ca2 = MathF.Cos(a2), sa2 = MathF.Sin(a2);
+
+                // Front cheek vertices (+Z)
+                Vector3 if1 = new Vector3(ca1 * innerR, -sa1 * innerR, hz);
+                Vector3 of1 = new Vector3(ca1 * outerR, -sa1 * outerR, hz);
+                Vector3 if2 = new Vector3(ca2 * innerR, -sa2 * innerR, hz);
+                Vector3 of2 = new Vector3(ca2 * outerR, -sa2 * outerR, hz);
+
+                // Back cheek vertices (-Z)
+                Vector3 ib1 = new Vector3(ca1 * innerR, -sa1 * innerR, -hz);
+                Vector3 ob1 = new Vector3(ca1 * outerR, -sa1 * outerR, -hz);
+                Vector3 ib2 = new Vector3(ca2 * innerR, -sa2 * innerR, -hz);
+                Vector3 ob2 = new Vector3(ca2 * outerR, -sa2 * outerR, -hz);
+
+                // Front cheek (+Z)
+                MeshGeometryHelper.AddQuad(vertices, indices, if1, of1, of2, if2, Vector3.Backward);
+                // Back cheek (-Z)
+                MeshGeometryHelper.AddQuad(vertices, indices, ob1, ib1, ib2, ob2, Vector3.Forward);
+
+                // Outer spine face
+                Vector3 nOuter = Vector3.Normalize(new Vector3((ca1 + ca2) * 0.5f, -(sa1 + sa2) * 0.5f, 0));
+                MeshGeometryHelper.AddQuad(vertices, indices, of1, ob1, ob2, of2, nOuter);
+
+                // Inner throat face
+                MeshGeometryHelper.AddQuad(vertices, indices, ib1, if1, if2, ib2, -nOuter);
             }
 
             return BuildMesh(device, vertices, indices);
@@ -54,7 +72,21 @@ namespace BuildMechanic.Graphics.MeshBuilders
             for (int i = 0; i < segs; i++)
             {
                 ushort b = (ushort)(i * 2);
-                MeshGeometryHelper.AddCylinderWall(indices, b);
+                // Double-sided wall ensures visible both from above and from underneath
+                MeshGeometryHelper.AddDoubleSidedCylinderWall(indices, b);
+            }
+
+            // Top socket cap (+Y)
+            ushort topCenter = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(new Vector3(0, height * 0.5f, 0), Vector3.Up, new Vector2(0.5f, 0.5f)));
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * topR, height * 0.5f, MathF.Sin(a) * topR), Vector3.Up, Vector2.Zero));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                MeshGeometryHelper.AddTopCapTri(indices, topCenter, (ushort)i);
             }
 
             return BuildMesh(device, vertices, indices);

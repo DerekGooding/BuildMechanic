@@ -83,6 +83,11 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 Vector3 rNorm = Vector3.Normalize(r);
                 AddQuad(b1, b1 + depthOffset, t1 + depthOffset, t1, rNorm);
                 AddQuad(b0 + depthOffset, b0, t0, t0 + depthOffset, -rNorm);
+
+                // Fingertip cap & base mounting cap
+                Vector3 tipNorm = Vector3.Normalize(tipPos - basePos);
+                AddQuad(t0, t1, t1 + depthOffset, t0 + depthOffset, tipNorm);
+                AddQuad(b0 + depthOffset, b1 + depthOffset, b1, b0, -tipNorm);
             }
 
             return BuildMesh(device, vertices, indices);

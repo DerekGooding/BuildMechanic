@@ -12,22 +12,35 @@ namespace BuildMechanic.Graphics.MeshBuilders
             var vertices = new List<VertexPositionNormalTexture>();
             var indices = new List<ushort>();
             int segs = 16;
-
-            for (int i = 0; i <= segs; i++)
-            {
-                float a = (float)i / segs * MathF.PI * 2f;
-                float x = MathF.Cos(a) * ringRadius;
-                float z = MathF.Sin(a) * ringRadius;
-                Vector3 n = new Vector3(MathF.Cos(a), 0, MathF.Sin(a));
-
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(x, 0, z), n, new Vector2((float)i / segs, 1)));
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(x, thickness, z), n, new Vector2((float)i / segs, 0)));
-            }
+            float innerR = ringRadius * 0.55f;
 
             for (int i = 0; i < segs; i++)
             {
-                ushort b = (ushort)(i * 2);
-                MeshGeometryHelper.AddCylinderWall(indices, b);
+                float a1 = (float)i / segs * MathF.PI * 2f;
+                float a2 = (float)(i + 1) / segs * MathF.PI * 2f;
+                float ca1 = MathF.Cos(a1), sa1 = MathF.Sin(a1);
+                float ca2 = MathF.Cos(a2), sa2 = MathF.Sin(a2);
+
+                Vector3 o0 = new Vector3(ca1 * ringRadius, 0, sa1 * ringRadius);
+                Vector3 o1 = new Vector3(ca2 * ringRadius, 0, sa2 * ringRadius);
+                Vector3 o2 = new Vector3(ca2 * ringRadius, thickness, sa2 * ringRadius);
+                Vector3 o3 = new Vector3(ca1 * ringRadius, thickness, sa1 * ringRadius);
+
+                Vector3 i0 = new Vector3(ca1 * innerR, 0, sa1 * innerR);
+                Vector3 i1 = new Vector3(ca2 * innerR, 0, sa2 * innerR);
+                Vector3 i2 = new Vector3(ca2 * innerR, thickness, sa2 * innerR);
+                Vector3 i3 = new Vector3(ca1 * innerR, thickness, sa1 * innerR);
+
+                Vector3 nOuter = Vector3.Normalize(new Vector3((ca1 + ca2) * 0.5f, 0, (sa1 + sa2) * 0.5f));
+
+                // Outer cylindrical ring perimeter
+                MeshGeometryHelper.AddQuad(vertices, indices, o0, o1, o2, o3, nOuter);
+                // Inner hydraulic fluid port bore
+                MeshGeometryHelper.AddQuad(vertices, indices, i1, i0, i3, i2, -nOuter);
+                // Top sealing washer deck (+Y)
+                MeshGeometryHelper.AddQuad(vertices, indices, i3, o3, o2, i2, Vector3.Up);
+                // Bottom sealing washer deck (-Y)
+                MeshGeometryHelper.AddQuad(vertices, indices, o0, i0, i1, o1, Vector3.Down);
             }
 
             return BuildMesh(device, vertices, indices);

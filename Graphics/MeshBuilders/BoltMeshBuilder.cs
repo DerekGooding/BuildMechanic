@@ -56,8 +56,23 @@ namespace BuildMechanic.Graphics.MeshBuilders
             for (int i = 0; i < flangeSegs; i++)
             {
                 ushort b = (ushort)(i * 2);
-                indices.Add(b); indices.Add((ushort)(b + 1)); indices.Add((ushort)(b + 3));
-                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 2));
+                MeshGeometryHelper.AddCylinderWall(indices, b);
+            }
+
+            // Bottom Washer Seating Deck (y = 0)
+            for (int i = 0; i < flangeSegs; i++)
+            {
+                float a1 = (float)i / flangeSegs * MathF.PI * 2f;
+                float a2 = (float)(i + 1) / flangeSegs * MathF.PI * 2f;
+                float ca1 = MathF.Cos(a1), sa1 = MathF.Sin(a1);
+                float ca2 = MathF.Cos(a2), sa2 = MathF.Sin(a2);
+
+                Vector3 o0 = new Vector3(ca1 * flangeRadius, 0, sa1 * flangeRadius);
+                Vector3 o1 = new Vector3(ca2 * flangeRadius, 0, sa2 * flangeRadius);
+                Vector3 i0 = new Vector3(ca1 * (flangeRadius * 0.45f), 0, sa1 * (flangeRadius * 0.45f));
+                Vector3 i1 = new Vector3(ca2 * (flangeRadius * 0.45f), 0, sa2 * (flangeRadius * 0.45f));
+
+                MeshGeometryHelper.AddQuad(vertices, indices, o0, i0, i1, o1, Vector3.Down);
             }
 
             // 2. 6-sided Hex Head Sides (y: flangeH to headHeight)
@@ -73,15 +88,10 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 Vector3 p3 = new Vector3(MathF.Cos(a1) * headRadius, headHeight, MathF.Sin(a1) * headRadius);
 
                 Vector3 n = Vector3.Normalize(Vector3.Cross(p3 - p0, p1 - p0));
-                ushort start = (ushort)vertices.Count;
 
-                vertices.Add(new VertexPositionNormalTexture(p0, n, new Vector2(0, 0.85f)));
-                vertices.Add(new VertexPositionNormalTexture(p1, n, new Vector2(1, 0.85f)));
-                vertices.Add(new VertexPositionNormalTexture(p2, n, new Vector2(1, 0.3f)));
-                vertices.Add(new VertexPositionNormalTexture(p3, n, new Vector2(0, 0.3f)));
-
-                indices.Add(start); indices.Add((ushort)(start + 2)); indices.Add((ushort)(start + 1));
-                indices.Add(start); indices.Add((ushort)(start + 3)); indices.Add((ushort)(start + 2));
+                MeshGeometryHelper.AddQuad(
+                    vertices, indices, p0, p1, p2, p3, n,
+                    new Vector2(0, 0.85f), new Vector2(1, 0.85f), new Vector2(1, 0.3f), new Vector2(0, 0.3f));
             }
 
             // 3. Top Face (+Y) with central socket bevel
@@ -150,8 +160,8 @@ namespace BuildMechanic.Graphics.MeshBuilders
                     ushort b2 = (ushort)(row2 + i);
                     ushort b3 = (ushort)(row2 + i + 1);
 
-                    indices.Add(b0); indices.Add(b1); indices.Add(b2);
-                    indices.Add(b1); indices.Add(b3); indices.Add(b2);
+                    indices.Add(b0); indices.Add(b2); indices.Add(b1);
+                    indices.Add(b1); indices.Add(b2); indices.Add(b3);
                 }
             }
 
