@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using BuildMechanic.Graphics.Renderers;
 using BuildMechanic.Simulation;
 using BuildMechanic.Tools;
 
@@ -11,22 +12,22 @@ namespace BuildMechanic.Graphics
         private readonly GraphicsDevice _device;
         private readonly BasicEffect _effect;
 
-        // Meshes
-        private SimpleMesh _boxMesh;
-        private SimpleMesh _cylinderMesh;
-        private SimpleMesh _boltMesh;
+        // Shared Primitives & Base Textures
+        private readonly SimpleMesh _boxMesh;
+        private readonly SimpleMesh _cylinderMesh;
+        private readonly Texture2D _pixelTex;
+        private readonly Texture2D _glowTex;
+        private readonly Texture2D _chassisTex;
 
-        // Textures
-        private Texture2D _armorTex;
-        private Texture2D _chassisTex;
-        private Texture2D _floorTex;
-        private Texture2D _boltTex;
-        private Texture2D _pixelTex;
-        private Texture2D _glowTex;
-
-        // Subsystem & Tool sub-renderers
-        private readonly ToolRenderer _toolRenderer = new ToolRenderer();
-        private readonly SubsystemRenderer _subsystemRenderer = new SubsystemRenderer();
+        // Subsystem & Specialized Component Renderers
+        private readonly LightingManager _lighting;
+        private readonly HangarRenderer _hangarRenderer;
+        private readonly ChassisRenderer _chassisRenderer;
+        private readonly ArmorPlateRenderer _plateRenderer;
+        private readonly BoltRenderer _boltRenderer;
+        private readonly CrackRenderer _crackRenderer;
+        private readonly SubsystemRenderer _subsystemRenderer;
+        private readonly ToolRenderer _toolRenderer;
 
         public Texture2D PixelTexture => _pixelTex;
         public Texture2D GlowTexture => _glowTex;
@@ -41,30 +42,25 @@ namespace BuildMechanic.Graphics
                 PreferPerPixelLighting = true
             };
 
-            // Set up lighting
-            _effect.DirectionalLight0.Enabled = true;
-            _effect.DirectionalLight0.Direction = Vector3.Normalize(new Vector3(-0.6f, -1.0f, -0.8f));
-            _effect.DirectionalLight0.DiffuseColor = new Vector3(0.95f, 0.95f, 0.90f);
-            _effect.DirectionalLight0.SpecularColor = new Vector3(0.4f, 0.4f, 0.4f);
-
-            _effect.DirectionalLight1.Enabled = true;
-            _effect.DirectionalLight1.Direction = Vector3.Normalize(new Vector3(0.8f, -0.4f, 0.6f));
-            _effect.DirectionalLight1.DiffuseColor = new Vector3(0.35f, 0.40f, 0.50f);
-
-            _effect.AmbientLightColor = new Vector3(0.28f, 0.30f, 0.35f);
-
-            // Procedural textures
-            _armorTex = TextureGenerator.CreateArmorPlateTexture(device, 512, 512, withHazardStripes: true);
-            _chassisTex = TextureGenerator.CreateChassisTexture(device, 256);
-            _floorTex = TextureGenerator.CreateHangarFloorTexture(device, 256);
-            _boltTex = TextureGenerator.CreateBoltTexture(device, 64);
+            // Base procedural textures
             _pixelTex = TextureGenerator.CreateWhitePixel(device);
             _glowTex = TextureGenerator.CreateRadialGlow(device, 64);
+            _chassisTex = TextureGenerator.CreateChassisTexture(device, 256);
 
-            // Meshes
+            // Base geometric primitives
             _boxMesh = MeshPrimitives.CreateBox(device, Vector3.One);
-            _cylinderMesh = MeshPrimitives.CreateCylinder(device, 0.5f, 1.0f, 16);
-            _boltMesh = MeshPrimitives.CreateHexBolt(device, 0.045f, 0.022f, 0.024f, 0.08f);
+            _cylinderMesh = MeshPrimitives.CreateCylinder(device, 0.5f, 1.0f, 20);
+
+            // Initialize modular sub-renderers
+            _lighting = new LightingManager();
+            _hangarRenderer = new HangarRenderer(device, _boxMesh, _cylinderMesh, _chassisTex);
+            _chassisRenderer = new ChassisRenderer(device, _chassisTex, _boxMesh, _cylinderMesh);
+            _plateRenderer = new ArmorPlateRenderer(device);
+            _boltRenderer = new BoltRenderer(device);
+            _crackRenderer = new CrackRenderer(device, _boxMesh, _pixelTex);
+            _subsystemRenderer = new SubsystemRenderer();
+            _toolRenderer = new ToolRenderer();
+            _toolRenderer.Initialize(device);
         }
 
         public void DrawScene(Matrix view, Matrix proj, MechChassis chassis, ToolManager tools, float servoOffset = 0f)
@@ -76,211 +72,29 @@ namespace BuildMechanic.Graphics
             _effect.View = view;
             _effect.Projection = proj;
 
-            if (tools.IsOperating && tools.ActiveTool == ToolType.Welder)
-            {
-                float flicker = tools.ArcFlickerIntensity;
-                _effect.AmbientLightColor = new Vector3(0.28f + flicker * 0.4f, 0.30f + flicker * 0.45f, 0.35f + flicker * 0.7f);
-            }
-            else
-            {
-                _effect.AmbientLightColor = new Vector3(0.28f, 0.30f, 0.35f);
-            }
+            // 1. Dynamic 3-point studio lighting & tool arc/spark flashes
+            _lighting.ApplyLighting(_effect, tools);
 
-            DrawHangar();
-            DrawChassis(chassis, servoOffset);
+            // 2. Industrial Hangar Bay & Workbenches
+            _hangarRenderer.Draw(_device, _effect);
+
+            // 3. Heavy Mech Chassis, Gimbals & Sub-Armor Bulkheads
+            _chassisRenderer.Draw(_device, _effect, chassis, servoOffset);
+
+            // 4. Subsystem Internals (Hydraulic Cylinders & Avionics Relays)
             _subsystemRenderer.DrawSubsystems(_device, _effect, _boxMesh, _cylinderMesh, _chassisTex, chassis, tools);
-            DrawPlates(chassis, tools);
-            DrawBolts(chassis, tools);
-            DrawCracks(chassis, tools);
+
+            // 5. Beveled Composite Ballistic Armor Plates
+            _plateRenderer.Draw(_device, _effect, chassis, tools);
+
+            // 6. Fasteners & Screw Threads (with ISO metric thread profiles & dynamic spin)
+            _boltRenderer.Draw(_device, _effect, chassis, tools);
+
+            // 7. Structural Cracks & Scalloped Weld Beads with HAZ Temper Colors
+            _crackRenderer.Draw(_device, _effect, chassis, tools);
+
+            // 8. 3D Shop Tools (Impact Driver, Grinder, Welder, Multimeter, etc.)
             _toolRenderer.DrawActiveTool(_device, _effect, _boxMesh, _cylinderMesh, _chassisTex, tools);
-        }
-
-        private void DrawHangar()
-        {
-            _effect.Texture = _floorTex;
-            _effect.DiffuseColor = Vector3.One;
-            DrawBox(new Vector3(0, -0.05f, 0), new Vector3(16f, 0.1f, 16f));
-
-            _effect.Texture = _chassisTex;
-            DrawBox(new Vector3(0, 5.0f, -4.5f), new Vector3(16f, 10f, 0.5f));
-            DrawBox(new Vector3(-3.2f, 4.0f, -0.5f), new Vector3(0.4f, 8.0f, 0.4f));
-            DrawBox(new Vector3(3.2f, 4.0f, -0.5f), new Vector3(0.4f, 8.0f, 0.4f));
-            DrawBox(new Vector3(0, 7.8f, -0.5f), new Vector3(7.0f, 0.5f, 0.6f));
-
-            DrawWorkstation(new Vector3(-1.80f, 0, 1.20f));
-            DrawWorkstation(new Vector3(1.80f, 0, 1.20f));
-        }
-
-        private void DrawWorkstation(Vector3 basePos)
-        {
-            _effect.Texture = _chassisTex;
-            _effect.DiffuseColor = new Vector3(0.70f, 0.72f, 0.76f);
-            DrawBox(basePos + new Vector3(0, 0.60f, 0), new Vector3(1.40f, 1.20f, 0.90f));
-
-            _effect.DiffuseColor = new Vector3(0.50f, 0.52f, 0.56f);
-            DrawBox(basePos + new Vector3(0, 1.22f, 0), new Vector3(1.48f, 0.05f, 0.96f));
-
-            _effect.DiffuseColor = new Vector3(0.85f, 0.85f, 0.90f);
-            DrawBox(basePos + new Vector3(-0.35f, 1.42f, -0.04f), new Vector3(0.08f, 0.35f, 0.12f));
-            DrawBox(basePos + new Vector3(0.35f, 1.42f, -0.04f), new Vector3(0.08f, 0.35f, 0.12f));
-
-            DrawBox(basePos + new Vector3(0, 1.54f, -0.02f), new Vector3(0.80f, 0.06f, 0.14f));
-            _effect.DiffuseColor = new Vector3(0.25f, 0.25f, 0.28f);
-            DrawBox(basePos + new Vector3(-0.25f, 1.58f, -0.01f), new Vector3(0.12f, 0.03f, 0.16f));
-            DrawBox(basePos + new Vector3(0.25f, 1.58f, -0.01f), new Vector3(0.12f, 0.03f, 0.16f));
-        }
-
-        private void DrawChassis(MechChassis chassis, float servoOffset)
-        {
-            _effect.Texture = _chassisTex;
-            _effect.DiffuseColor = new Vector3(0.85f, 0.85f, 0.90f);
-
-            DrawBox(new Vector3(0, 1.4f, 0), new Vector3(1.1f, 1.0f, 0.8f));
-            DrawBox(new Vector3(0, 2.7f, 0.05f), new Vector3(1.40f, 1.40f, 0.70f));
-
-            // Torso Mounting Bosses
-            DrawBox(new Vector3(-0.52f, 2.7f, 0.43f), new Vector3(0.76f, 0.96f, 0.06f));
-            DrawBox(new Vector3(0.52f, 2.7f, 0.43f), new Vector3(0.76f, 0.96f, 0.06f));
-
-            // Shoulder Mounting Bosses (with servo test motion offset)
-            DrawBox(new Vector3(-1.45f, 3.35f + servoOffset, 0.43f), new Vector3(0.80f, 0.50f, 0.06f));
-            DrawBox(new Vector3(1.45f, 3.35f - servoOffset, 0.43f), new Vector3(0.80f, 0.50f, 0.06f));
-
-            // Leg Mounting Bosses
-            DrawBox(new Vector3(-0.55f, 0.85f, 0.43f), new Vector3(0.50f, 0.85f, 0.06f));
-            DrawBox(new Vector3(0.55f, 0.85f, 0.43f), new Vector3(0.50f, 0.85f, 0.06f));
-
-            DrawBox(new Vector3(0, 2.7f, 0.44f), new Vector3(0.16f, 1.10f, 0.08f));
-            DrawBox(new Vector3(0, 3.65f, 0.20f), new Vector3(0.75f, 0.55f, 0.60f));
-
-            DrawBox(new Vector3(-1.45f, 3.35f + servoOffset, 0.15f), new Vector3(0.9f, 0.5f, 0.6f));
-            DrawBox(new Vector3(1.45f, 3.35f - servoOffset, 0.15f), new Vector3(0.9f, 0.5f, 0.6f));
-
-            DrawCylinder(new Vector3(-2.0f, 2.5f + servoOffset, 0.15f), 0.25f, 1.4f);
-            DrawCylinder(new Vector3(2.0f, 2.5f - servoOffset, 0.15f), 0.25f, 1.4f);
-
-            DrawCylinder(new Vector3(-0.55f, 0.7f, 0), 0.22f, 1.4f);
-            DrawCylinder(new Vector3(0.55f, 0.7f, 0), 0.22f, 1.4f);
-        }
-
-        private void DrawPlates(MechChassis chassis, ToolManager tools)
-        {
-            _effect.Texture = _armorTex;
-
-            foreach (var plate in chassis.Plates)
-            {
-                Matrix plateWorld = plate.GetWorldMatrix();
-                Vector3 tint = plate.BaseCoatingColor.ToVector3();
-
-                if (tools.ActiveTool == ToolType.Scanner)
-                {
-                    _effect.DiffuseColor = plate.HasUnrepairedCracks ? new Vector3(1.2f, 0.5f, 0.4f) : new Vector3(0.5f, 1.1f, 0.6f);
-                }
-                else if (tools.HoveredPlate == plate && tools.HoveredBolt == null && tools.HoveredCrack == null)
-                {
-                    _effect.DiffuseColor = tint * 1.3f;
-                }
-                else
-                {
-                    _effect.DiffuseColor = tint;
-                }
-
-                _effect.World = Matrix.CreateScale(plate.Dimensions) * plateWorld;
-                _boxMesh.Draw(_device, _effect);
-            }
-        }
-
-        private void DrawBolts(MechChassis chassis, ToolManager tools)
-        {
-            _effect.Texture = _boltTex;
-
-            foreach (var plate in chassis.Plates)
-            {
-                Matrix plateWorld = plate.GetWorldMatrix();
-                Matrix plateRot = plate.GetRotationMatrix();
-
-                foreach (var bolt in plate.Bolts)
-                {
-                    Vector3 boltPos = bolt.GetWorldPosition(plateWorld);
-                    if (tools.HoveredBolt == bolt)
-                    {
-                        _effect.DiffuseColor = new Vector3(1.8f, 1.6f, 0.4f);
-                    }
-                    else if (bolt.IsTorqued)
-                    {
-                        _effect.DiffuseColor = new Vector3(0.9f, 0.95f, 1.0f);
-                    }
-                    else
-                    {
-                        _effect.DiffuseColor = new Vector3(1.2f, 0.8f, 0.4f);
-                    }
-
-                    Matrix boltRot = Matrix.CreateRotationY(bolt.SpinAngle) * Matrix.CreateRotationX(MathHelper.PiOver2) * plateRot;
-                    _effect.World = boltRot * Matrix.CreateTranslation(boltPos);
-                    _boltMesh.Draw(_device, _effect);
-                }
-            }
-        }
-
-        private void DrawCracks(MechChassis chassis, ToolManager tools)
-        {
-            _effect.Texture = _pixelTex;
-
-            foreach (var plate in chassis.Plates)
-            {
-                Matrix plateWorld = plate.GetWorldMatrix();
-
-                foreach (var crack in plate.Cracks)
-                {
-                    int segCount = crack.LocalPoints.Count - 1;
-                    if (segCount <= 0) continue;
-
-                    for (int i = 0; i < segCount; i++)
-                    {
-                        Vector3 p0 = Vector3.Transform(crack.LocalPoints[i], plateWorld);
-                        Vector3 p1 = Vector3.Transform(crack.LocalPoints[i + 1], plateWorld);
-                        Vector3 mid = (p0 + p1) * 0.5f;
-                        Vector3 dir = p1 - p0;
-                        float len = dir.Length();
-                        if (len < 0.001f) continue;
-
-                        dir /= len;
-                        float segStart = (float)i / segCount;
-                        float segEnd = (float)(i + 1) / segCount;
-                        float progress = crack.StageProgress;
-
-                        Color segColor = crack.Stage switch
-                        {
-                            CrackStage.Fractured => (progress >= segEnd) ? new Color(205, 215, 230) :
-                                ((progress > segStart && tools.IsOperating && tools.HoveredCrack == crack) ? new Color(255, 240, 150) : new Color(25, 25, 28)),
-                            CrackStage.PreppedGroove => (progress >= segEnd) ? new Color(255, 130, 20) :
-                                ((progress > segStart && tools.IsOperating && tools.HoveredCrack == crack) ? new Color(255, 255, 220) : new Color(205, 215, 230)),
-                            CrackStage.WeldedBead => (progress >= segEnd) ? new Color(185, 195, 205) :
-                                ((progress > segStart && tools.IsOperating && tools.HoveredCrack == crack) ? new Color(255, 220, 100) : new Color(245, 120, 20)),
-                            _ => new Color(185, 195, 205)
-                        };
-
-                        float thickness = crack.Stage == CrackStage.WeldedBead ? 0.036f : 0.022f;
-                        if (tools.HoveredCrack == crack && !tools.IsOperating) segColor = Color.Yellow;
-
-                        _effect.DiffuseColor = segColor.ToVector3();
-                        _effect.World = Matrix.CreateScale(thickness, thickness, len) * Matrix.CreateWorld(mid, dir, Vector3.Up);
-                        _boxMesh.Draw(_device, _effect);
-                    }
-                }
-            }
-        }
-
-        private void DrawBox(Vector3 position, Vector3 size)
-        {
-            _effect.World = Matrix.CreateScale(size) * Matrix.CreateTranslation(position);
-            _boxMesh.Draw(_device, _effect);
-        }
-
-        private void DrawCylinder(Vector3 position, float radius, float height)
-        {
-            _effect.World = Matrix.CreateScale(radius * 2f, height, radius * 2f) * Matrix.CreateTranslation(position);
-            _cylinderMesh.Draw(_device, _effect);
         }
 
         public void Dispose()
@@ -288,13 +102,17 @@ namespace BuildMechanic.Graphics
             _effect?.Dispose();
             _boxMesh?.Dispose();
             _cylinderMesh?.Dispose();
-            _boltMesh?.Dispose();
-            _armorTex?.Dispose();
-            _chassisTex?.Dispose();
-            _floorTex?.Dispose();
-            _boltTex?.Dispose();
             _pixelTex?.Dispose();
             _glowTex?.Dispose();
+            _chassisTex?.Dispose();
+
+            _hangarRenderer?.Dispose();
+            _chassisRenderer?.Dispose();
+            _plateRenderer?.Dispose();
+            _boltRenderer?.Dispose();
+            _crackRenderer?.Dispose();
+            _subsystemRenderer?.Dispose();
+            _toolRenderer?.Dispose();
         }
     }
 }

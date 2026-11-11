@@ -184,49 +184,5 @@ namespace BuildMechanic.Graphics
             tex.SetData(data);
             return tex;
         }
-
-        public static Texture2D CreateBoltTexture(GraphicsDevice device, int size = 64)
-        {
-            var tex = new Texture2D(device, size, size);
-            var data = new Color[size * size];
-            float center = size / 2f;
-
-            Color boltHead = new Color(160, 165, 172);
-            Color boltEdge = new Color(210, 215, 222);
-            Color socketRecess = new Color(30, 32, 36);
-
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = (x + 0.5f) - center;
-                    float dy = (y + 0.5f) - center;
-                    float dist = MathF.Sqrt(dx * dx + dy * dy);
-
-                    // Central hex socket (radius 7)
-                    if (dist < 7)
-                    {
-                        data[y * size + x] = socketRecess;
-                    }
-                    else if (dist < 26)
-                    {
-                        // Inner head
-                        data[y * size + x] = boltHead;
-                    }
-                    else if (dist < 29)
-                    {
-                        // Beveled rim
-                        data[y * size + x] = boltEdge;
-                    }
-                    else
-                    {
-                        data[y * size + x] = Color.Transparent;
-                    }
-                }
-            }
-
-            tex.SetData(data);
-            return tex;
-        }
     }
 }
