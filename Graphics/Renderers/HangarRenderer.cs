@@ -11,6 +11,8 @@ namespace BuildMechanic.Graphics.Renderers
         private readonly SimpleMesh _boxMesh;
         private readonly SimpleMesh _cylinderMesh;
         private readonly SimpleMesh _hookMesh;
+        private readonly SimpleMesh _viseMesh;
+        private readonly SimpleMesh _lampMesh;
         private readonly Texture2D _floorTex;
         private readonly Texture2D _matTex;
         private readonly Texture2D _screenTex;
@@ -28,6 +30,8 @@ namespace BuildMechanic.Graphics.Renderers
             _matTex = HangarTextureGenerator.CreateWorkstationMat(device, 256);
             _screenTex = HangarTextureGenerator.CreateDiagnosticScreen(device, 256);
             _hookMesh = HangarMeshBuilder.CreateCraneHook(device);
+            _viseMesh = HangarMeshBuilder.CreateBenchVise(device);
+            _lampMesh = HangarMeshBuilder.CreateLampShade(device);
         }
 
         public void Draw(GraphicsDevice device, BasicEffect effect)
@@ -98,6 +102,16 @@ namespace BuildMechanic.Graphics.Renderers
             DrawBox(device, effect, basePos + new Vector3(-0.25f, 1.58f, -0.01f), new Vector3(0.12f, 0.03f, 0.16f));
             DrawBox(device, effect, basePos + new Vector3(0.25f, 1.58f, -0.01f), new Vector3(0.12f, 0.03f, 0.16f));
 
+            // Pneumatic Heavy Bench Vise on Table Corner
+            effect.DiffuseColor = new Vector3(0.28f, 0.52f, 0.82f); // Industrial blue cast iron
+            effect.World = Matrix.CreateTranslation(basePos + new Vector3(-0.62f, 1.32f, 0.32f));
+            _viseMesh.Draw(device, effect);
+
+            // Articulated Task Lamp shining down on plate cradle
+            effect.DiffuseColor = new Vector3(0.92f, 0.78f, 0.15f); // Yellow industrial shade
+            effect.World = Matrix.CreateRotationX(0.4f) * Matrix.CreateTranslation(basePos + new Vector3(-0.50f, 1.82f, -0.15f));
+            _lampMesh.Draw(device, effect);
+
             // CRT Diagnostic Telemetry Monitor
             effect.Texture = _screenTex;
             effect.DiffuseColor = Vector3.One;
@@ -113,6 +127,8 @@ namespace BuildMechanic.Graphics.Renderers
         public void Dispose()
         {
             _hookMesh?.Dispose();
+            _viseMesh?.Dispose();
+            _lampMesh?.Dispose();
             _floorTex?.Dispose();
             _matTex?.Dispose();
             _screenTex?.Dispose();

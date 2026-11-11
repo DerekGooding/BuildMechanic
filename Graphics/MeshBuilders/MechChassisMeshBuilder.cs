@@ -7,86 +7,165 @@ namespace BuildMechanic.Graphics.MeshBuilders
 {
     public static class MechChassisMeshBuilder
     {
-        public static SimpleMesh CreateCockpitHead(GraphicsDevice device)
+        public static SimpleMesh CreateDetailedCockpit(GraphicsDevice device)
         {
             var vertices = new List<VertexPositionNormalTexture>();
             var indices = new List<ushort>();
 
-            // Sloped armored cockpit pod with angled facet visor
             Vector3 size = new Vector3(0.75f, 0.55f, 0.60f);
             float hw = size.X * 0.5f, hh = size.Y * 0.5f, hd = size.Z * 0.5f;
 
-            // 8 sloped vertices for faceted ballistic cockpit
-            Vector3 p0 = new Vector3(-hw * 0.85f, -hh, hd * 0.8f);
-            Vector3 p1 = new Vector3(hw * 0.85f, -hh, hd * 0.8f);
-            Vector3 p2 = new Vector3(hw * 0.65f, hh * 0.7f, hd * 0.3f);
-            Vector3 p3 = new Vector3(-hw * 0.65f, hh * 0.7f, hd * 0.3f);
-            Vector3 p4 = new Vector3(-hw, -hh, -hd);
-            Vector3 p5 = new Vector3(hw, -hh, -hd);
-            Vector3 p6 = new Vector3(hw * 0.8f, hh, -hd * 0.7f);
-            Vector3 p7 = new Vector3(-hw * 0.8f, hh, -hd * 0.7f);
-
-            void AddQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+            void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal, Vector2 uv0, Vector2 uv1, Vector2 uv2, Vector2 uv3)
             {
                 ushort s = (ushort)vertices.Count;
-                Vector3 n = Vector3.Normalize(Vector3.Cross(c - a, b - a));
-                vertices.Add(new VertexPositionNormalTexture(a, n, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionNormalTexture(b, n, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(c, n, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(d, n, new Vector2(0, 0)));
+                vertices.Add(new VertexPositionNormalTexture(p0, normal, uv0));
+                vertices.Add(new VertexPositionNormalTexture(p1, normal, uv1));
+                vertices.Add(new VertexPositionNormalTexture(p2, normal, uv2));
+                vertices.Add(new VertexPositionNormalTexture(p3, normal, uv3));
 
-                indices.Add(s); indices.Add((ushort)(s + 1)); indices.Add((ushort)(s + 2));
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 3));
+                // Clockwise outward facing
+                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
+                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
             }
 
-            // Front sloped face
-            AddQuad(p0, p1, p2, p3);
+            // Faceted sloped cockpit canopy vertices
+            Vector3 fBotL = new Vector3(-hw * 0.85f, -hh, hd * 0.8f);
+            Vector3 fBotR = new Vector3(hw * 0.85f, -hh, hd * 0.8f);
+            Vector3 fMidL = new Vector3(-hw * 0.70f, 0, hd * 0.75f);
+            Vector3 fMidR = new Vector3(hw * 0.70f, 0, hd * 0.75f);
+            Vector3 fTopL = new Vector3(-hw * 0.60f, hh * 0.7f, hd * 0.3f);
+            Vector3 fTopR = new Vector3(hw * 0.60f, hh * 0.7f, hd * 0.3f);
+
+            Vector3 bBotL = new Vector3(-hw, -hh, -hd);
+            Vector3 bBotR = new Vector3(hw, -hh, -hd);
+            Vector3 bTopL = new Vector3(-hw * 0.75f, hh, -hd * 0.7f);
+            Vector3 bTopR = new Vector3(hw * 0.75f, hh, -hd * 0.7f);
+
+            // Lower front glacis
+            AddQuad(fBotL, fBotR, fMidR, fMidL, Vector3.Normalize(new Vector3(0, 0.4f, 1f)), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(0, 0.5f));
+            // Upper front visor brow
+            AddQuad(fMidL, fMidR, fTopR, fTopL, Vector3.Normalize(new Vector3(0, 0.8f, 0.6f)), new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0), new Vector2(0, 0));
+
+            // Sloped roof
+            AddQuad(fTopL, fTopR, bTopR, bTopL, Vector3.Up, new Vector2(0, 0.3f), new Vector2(1, 0.3f), new Vector2(1, 0), new Vector2(0, 0));
             // Left flank
-            AddQuad(p4, p0, p3, p7);
+            AddQuad(bBotL, fBotL, fTopL, bTopL, Vector3.Left, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
             // Right flank
-            AddQuad(p1, p5, p6, p2);
-            // Top roof
-            AddQuad(p3, p2, p6, p7);
+            AddQuad(fBotR, bBotR, bTopR, fTopR, Vector3.Right, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
             // Rear bulkhead
-            AddQuad(p5, p4, p7, p6);
+            AddQuad(bBotR, bBotL, bTopL, bTopR, Vector3.Backward, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
             // Bottom
-            AddQuad(p4, p5, p1, p0);
+            AddQuad(bBotL, bBotR, fBotR, fBotL, Vector3.Down, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
 
             return BuildMesh(device, vertices, indices);
         }
 
-        public static SimpleMesh CreateTurretRing(GraphicsDevice device, float outerRadius = 0.55f, float innerRadius = 0.42f, float height = 0.12f)
+        public static SimpleMesh CreateSternalKeel(GraphicsDevice device, float width = 0.16f, float height = 1.10f, float depth = 0.08f)
         {
             var vertices = new List<VertexPositionNormalTexture>();
             var indices = new List<ushort>();
-            int segs = 24;
+
+            float hw = width * 0.5f, hh = height * 0.5f, hd = depth * 0.5f;
+
+            void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
+            {
+                ushort s = (ushort)vertices.Count;
+                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
+                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
+                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
+                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
+
+                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
+                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+            }
+
+            // Triangular wedge spine keel
+            Vector3 fBotMid = new Vector3(0, -hh, hd);
+            Vector3 fTopMid = new Vector3(0, hh, hd);
+            Vector3 bBotL = new Vector3(-hw, -hh, -hd);
+            Vector3 bBotR = new Vector3(hw, -hh, -hd);
+            Vector3 bTopL = new Vector3(-hw, hh, -hd);
+            Vector3 bTopR = new Vector3(hw, hh, -hd);
+
+            // Left keel slope
+            Vector3 nL = Vector3.Normalize(new Vector3(-hd, 0, hw));
+            AddQuad(bBotL, fBotMid, fTopMid, bTopL, nL);
+
+            // Right keel slope
+            Vector3 nR = Vector3.Normalize(new Vector3(hd, 0, hw));
+            AddQuad(fBotMid, bBotR, bTopR, fTopMid, nR);
+
+            // Back face
+            AddQuad(bBotR, bBotL, bTopL, bTopR, Vector3.Forward);
+
+            // Top cap
+            ushort st = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(bTopL, Vector3.Up, new Vector2(0, 0)));
+            vertices.Add(new VertexPositionNormalTexture(bTopR, Vector3.Up, new Vector2(1, 0)));
+            vertices.Add(new VertexPositionNormalTexture(fTopMid, Vector3.Up, new Vector2(0.5f, 1)));
+            indices.Add(st); indices.Add((ushort)(st + 1)); indices.Add((ushort)(st + 2));
+
+            // Bottom cap
+            ushort sb = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(bBotL, Vector3.Down, new Vector2(0, 0)));
+            vertices.Add(new VertexPositionNormalTexture(fBotMid, Vector3.Down, new Vector2(0.5f, 1)));
+            vertices.Add(new VertexPositionNormalTexture(bBotR, Vector3.Down, new Vector2(1, 0)));
+            indices.Add(sb); indices.Add((ushort)(sb + 1)); indices.Add((ushort)(sb + 2));
+
+            return BuildMesh(device, vertices, indices);
+        }
+
+        public static SimpleMesh CreateTurretRing(GraphicsDevice device, float outerR = 0.55f, float innerR = 0.42f, float h = 0.12f)
+        {
+            var vertices = new List<VertexPositionNormalTexture>();
+            var indices = new List<ushort>();
+            int teeth = 32;
+
+            for (int i = 0; i <= teeth; i++)
+            {
+                float a = (float)i / teeth * MathF.PI * 2f;
+                float r = (i % 2 == 0) ? outerR : outerR - 0.035f; // Gear teeth indent
+                float ca = MathF.Cos(a), sa = MathF.Sin(a);
+                Vector3 n = new Vector3(ca, 0, sa);
+
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * r, 0, sa * r), n, new Vector2((float)i / teeth, 1)));
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * r, h, sa * r), n, new Vector2((float)i / teeth, 0)));
+            }
+
+            for (int i = 0; i < teeth; i++)
+            {
+                ushort b = (ushort)(i * 2);
+                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
+                indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
+            }
+
+            return BuildMesh(device, vertices, indices);
+        }
+
+        public static SimpleMesh CreateKneeJoint(GraphicsDevice device, float radius = 0.16f, float thickness = 0.22f)
+        {
+            var vertices = new List<VertexPositionNormalTexture>();
+            var indices = new List<ushort>();
+            int segs = 16;
 
             for (int i = 0; i <= segs; i++)
             {
                 float a = (float)i / segs * MathF.PI * 2f;
-                float ca = MathF.Cos(a);
-                float sa = MathF.Sin(a);
-                float u = (float)i / segs;
+                float ca = MathF.Cos(a), sa = MathF.Sin(a);
+                Vector3 n = new Vector3(0, sa, ca);
 
-                Vector3 nOut = new Vector3(ca, 0, sa);
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * outerRadius, 0, sa * outerRadius), nOut, new Vector2(u, 1)));
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * outerRadius, height, sa * outerRadius), nOut, new Vector2(u, 0)));
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(-thickness * 0.5f, sa * radius, ca * radius), n, new Vector2((float)i / segs, 1)));
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(thickness * 0.5f, sa * radius, ca * radius), n, new Vector2((float)i / segs, 0)));
             }
 
             for (int i = 0; i < segs; i++)
             {
                 ushort b = (ushort)(i * 2);
-                indices.Add(b); indices.Add((ushort)(b + 1)); indices.Add((ushort)(b + 3));
-                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 2));
+                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
+                indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
             }
 
             return BuildMesh(device, vertices, indices);
-        }
-
-        public static SimpleMesh CreateSubArmorBoss(GraphicsDevice device, Vector3 size)
-        {
-            // Mounting boss with recessed bolt anchor sockets
-            return MeshPrimitives.CreateBox(device, size);
         }
 
         private static SimpleMesh BuildMesh(GraphicsDevice device, List<VertexPositionNormalTexture> vertices, List<ushort> indices)

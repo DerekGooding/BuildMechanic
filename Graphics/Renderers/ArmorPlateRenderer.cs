@@ -21,9 +21,9 @@ namespace BuildMechanic.Graphics.Renderers
         {
             _armorTex = ArmorTextureGenerator.CreateDetailedArmorTexture(device, 512, 512, withChevrons: true);
 
-            _torsoPlateMesh = ArmorPlateMeshBuilder.CreateBeveledPlate(device, new Vector3(0.85f, 1.05f, 0.08f), 0.30f, 0.38f);
-            _shoulderPlateMesh = ArmorPlateMeshBuilder.CreateBeveledPlate(device, new Vector3(0.75f, 0.52f, 0.08f), 0.26f, 0.17f);
-            _legPlateMesh = ArmorPlateMeshBuilder.CreateBeveledPlate(device, new Vector3(0.50f, 0.82f, 0.08f), 0.16f, 0.28f);
+            _torsoPlateMesh = ArmorPlateMeshBuilder.CreateTorsoPlate(device, new Vector3(0.85f, 1.05f, 0.08f), 0.30f, 0.38f);
+            _shoulderPlateMesh = ArmorPlateMeshBuilder.CreateShoulderPlate(device, new Vector3(0.75f, 0.52f, 0.08f), 0.26f, 0.17f);
+            _legPlateMesh = ArmorPlateMeshBuilder.CreateLegPlate(device, new Vector3(0.50f, 0.82f, 0.08f), 0.16f, 0.28f);
         }
 
         public void Draw(GraphicsDevice device, BasicEffect effect, MechChassis chassis, ToolManager tools)
