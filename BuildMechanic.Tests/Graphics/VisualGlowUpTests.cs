@@ -58,6 +58,8 @@ namespace BuildMechanic.Tests.Graphics
                 "Graphics/MeshBuilders/ToolMeshBuilder.cs",
                 "Graphics/MeshBuilders/SubsystemMeshBuilder.cs",
                 "Graphics/MeshBuilders/HangarMeshBuilder.cs",
+                "Graphics/MeshBuilders/MechLimbsMeshBuilder.cs",
+                "Graphics/MeshBuilders/MechGantryRigMeshBuilder.cs",
                 "Graphics/MeshBuilders/CrackMeshBuilder.cs",
                 "Graphics/Renderers/BoltRenderer.cs",
                 "Graphics/Renderers/ChassisRenderer.cs",

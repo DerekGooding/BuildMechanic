@@ -13,6 +13,9 @@ namespace BuildMechanic.Graphics.Renderers
         private readonly SimpleMesh _hookMesh;
         private readonly SimpleMesh _viseMesh;
         private readonly SimpleMesh _lampMesh;
+        private readonly SimpleMesh _spreaderMesh;
+        private readonly SimpleMesh _cableMesh;
+        private readonly SimpleMesh _umbilicalMesh;
         private readonly Texture2D _floorTex;
         private readonly Texture2D _matTex;
         private readonly Texture2D _screenTex;
@@ -29,9 +32,14 @@ namespace BuildMechanic.Graphics.Renderers
             _floorTex = HangarTextureGenerator.CreateDiamondPlateFloor(device, 512);
             _matTex = HangarTextureGenerator.CreateWorkstationMat(device, 256);
             _screenTex = HangarTextureGenerator.CreateDiagnosticScreen(device, 256);
+
             _hookMesh = HangarMeshBuilder.CreateCraneHook(device);
             _viseMesh = HangarMeshBuilder.CreateBenchVise(device);
             _lampMesh = HangarMeshBuilder.CreateLampShade(device);
+
+            _spreaderMesh = MechGantryRigMeshBuilder.CreateSpreaderBeam(device, 3.6f, 0.28f, 0.35f);
+            _cableMesh = MechGantryRigMeshBuilder.CreateSuspensionCable(device, 2.4f, 0.022f);
+            _umbilicalMesh = MechGantryRigMeshBuilder.CreateUmbilicalBoom(device, 2.2f, 0.045f);
         }
 
         public void Draw(GraphicsDevice device, BasicEffect effect)
@@ -56,18 +64,40 @@ namespace BuildMechanic.Graphics.Renderers
             DrawBox(device, effect, new Vector3(-3.05f, 4.0f, -0.35f), new Vector3(0.06f, 7.8f, 0.06f));
             DrawBox(device, effect, new Vector3(3.05f, 4.0f, -0.35f), new Vector3(0.06f, 7.8f, 0.06f));
 
-            // 3. Overhead Heavy-Lift Gantry Crane Beam (Yellow)
+            // 3. Overhead Heavy-Lift Gantry Crane Beam & Trolley
             effect.DiffuseColor = new Vector3(0.92f, 0.72f, 0.18f);
             DrawBox(device, effect, new Vector3(0, 7.8f, -0.5f), new Vector3(7.0f, 0.5f, 0.6f));
 
-            // Crane Trolley Hoist & Hook
             effect.DiffuseColor = new Vector3(0.28f, 0.30f, 0.35f);
             DrawBox(device, effect, new Vector3(0, 7.45f, -0.5f), new Vector3(0.8f, 0.35f, 0.5f));
+
+            // Crane Hook hanging from trolley
             effect.DiffuseColor = new Vector3(0.85f, 0.88f, 0.95f);
             effect.World = Matrix.CreateTranslation(new Vector3(0, 7.15f, -0.5f));
             _hookMesh.Draw(device, effect);
 
-            // 4. Mechanic Workbenches (Left & Right)
+            // 4. Gantry Maintenance Suspension Rig
+            // Yellow Heavy Lifting Spreader Beam
+            effect.DiffuseColor = new Vector3(0.95f, 0.75f, 0.15f);
+            effect.World = Matrix.CreateTranslation(new Vector3(0, 6.20f, 0.15f));
+            _spreaderMesh.Draw(device, effect);
+
+            // High-Tensile Wire Rope Suspension Slings to Mech Shoulder Lift Eyes
+            effect.DiffuseColor = new Vector3(0.80f, 0.82f, 0.88f);
+            effect.World = Matrix.CreateTranslation(new Vector3(-1.45f, 6.20f, 0.15f));
+            _cableMesh.Draw(device, effect);
+            effect.World = Matrix.CreateTranslation(new Vector3(1.45f, 6.20f, 0.15f));
+            _cableMesh.Draw(device, effect);
+
+            // Articulated Hydraulic Umbilical Boom from Gantry Column to Mech Reactor Core
+            effect.DiffuseColor = new Vector3(0.32f, 0.35f, 0.40f);
+            effect.World = Matrix.CreateTranslation(new Vector3(-3.0f, 3.20f, -0.35f));
+            _umbilicalMesh.Draw(device, effect);
+            // Glowing Umbilical Connector Port
+            effect.DiffuseColor = new Vector3(0.2f, 1.4f, 0.5f);
+            DrawBox(device, effect, new Vector3(-0.80f, 3.20f, -0.35f), new Vector3(0.12f, 0.12f, 0.12f));
+
+            // 5. Mechanic Workbenches (Left & Right)
             DrawWorkstation(device, effect, new Vector3(-1.80f, 0, 1.20f));
             DrawWorkstation(device, effect, new Vector3(1.80f, 0, 1.20f));
         }
@@ -103,12 +133,12 @@ namespace BuildMechanic.Graphics.Renderers
             DrawBox(device, effect, basePos + new Vector3(0.25f, 1.58f, -0.01f), new Vector3(0.12f, 0.03f, 0.16f));
 
             // Pneumatic Heavy Bench Vise on Table Corner
-            effect.DiffuseColor = new Vector3(0.28f, 0.52f, 0.82f); // Industrial blue cast iron
+            effect.DiffuseColor = new Vector3(0.28f, 0.52f, 0.82f);
             effect.World = Matrix.CreateTranslation(basePos + new Vector3(-0.62f, 1.32f, 0.32f));
             _viseMesh.Draw(device, effect);
 
             // Articulated Task Lamp shining down on plate cradle
-            effect.DiffuseColor = new Vector3(0.92f, 0.78f, 0.15f); // Yellow industrial shade
+            effect.DiffuseColor = new Vector3(0.92f, 0.78f, 0.15f);
             effect.World = Matrix.CreateRotationX(0.4f) * Matrix.CreateTranslation(basePos + new Vector3(-0.50f, 1.82f, -0.15f));
             _lampMesh.Draw(device, effect);
 
@@ -129,6 +159,9 @@ namespace BuildMechanic.Graphics.Renderers
             _hookMesh?.Dispose();
             _viseMesh?.Dispose();
             _lampMesh?.Dispose();
+            _spreaderMesh?.Dispose();
+            _cableMesh?.Dispose();
+            _umbilicalMesh?.Dispose();
             _floorTex?.Dispose();
             _matTex?.Dispose();
             _screenTex?.Dispose();

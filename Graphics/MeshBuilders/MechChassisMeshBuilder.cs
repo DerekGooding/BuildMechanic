@@ -23,12 +23,10 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 vertices.Add(new VertexPositionNormalTexture(p2, normal, uv2));
                 vertices.Add(new VertexPositionNormalTexture(p3, normal, uv3));
 
-                // Clockwise outward facing
                 indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
                 indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
             }
 
-            // Faceted sloped cockpit canopy vertices
             Vector3 fBotL = new Vector3(-hw * 0.85f, -hh, hd * 0.8f);
             Vector3 fBotR = new Vector3(hw * 0.85f, -hh, hd * 0.8f);
             Vector3 fMidL = new Vector3(-hw * 0.70f, 0, hd * 0.75f);
@@ -41,20 +39,12 @@ namespace BuildMechanic.Graphics.MeshBuilders
             Vector3 bTopL = new Vector3(-hw * 0.75f, hh, -hd * 0.7f);
             Vector3 bTopR = new Vector3(hw * 0.75f, hh, -hd * 0.7f);
 
-            // Lower front glacis
             AddQuad(fBotL, fBotR, fMidR, fMidL, Vector3.Normalize(new Vector3(0, 0.4f, 1f)), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(0, 0.5f));
-            // Upper front visor brow
             AddQuad(fMidL, fMidR, fTopR, fTopL, Vector3.Normalize(new Vector3(0, 0.8f, 0.6f)), new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0), new Vector2(0, 0));
-
-            // Sloped roof
             AddQuad(fTopL, fTopR, bTopR, bTopL, Vector3.Up, new Vector2(0, 0.3f), new Vector2(1, 0.3f), new Vector2(1, 0), new Vector2(0, 0));
-            // Left flank
             AddQuad(bBotL, fBotL, fTopL, bTopL, Vector3.Left, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
-            // Right flank
             AddQuad(fBotR, bBotR, bTopR, fTopR, Vector3.Right, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
-            // Rear bulkhead
             AddQuad(bBotR, bBotL, bTopL, bTopR, Vector3.Backward, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
-            // Bottom
             AddQuad(bBotL, bBotR, fBotR, fBotL, Vector3.Down, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
 
             return BuildMesh(device, vertices, indices);
@@ -79,7 +69,6 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
             }
 
-            // Triangular wedge spine keel
             Vector3 fBotMid = new Vector3(0, -hh, hd);
             Vector3 fTopMid = new Vector3(0, hh, hd);
             Vector3 bBotL = new Vector3(-hw, -hh, -hd);
@@ -87,30 +76,62 @@ namespace BuildMechanic.Graphics.MeshBuilders
             Vector3 bTopL = new Vector3(-hw, hh, -hd);
             Vector3 bTopR = new Vector3(hw, hh, -hd);
 
-            // Left keel slope
             Vector3 nL = Vector3.Normalize(new Vector3(-hd, 0, hw));
             AddQuad(bBotL, fBotMid, fTopMid, bTopL, nL);
-
-            // Right keel slope
             Vector3 nR = Vector3.Normalize(new Vector3(hd, 0, hw));
             AddQuad(fBotMid, bBotR, bTopR, fTopMid, nR);
-
-            // Back face
             AddQuad(bBotR, bBotL, bTopL, bTopR, Vector3.Forward);
 
-            // Top cap
             ushort st = (ushort)vertices.Count;
             vertices.Add(new VertexPositionNormalTexture(bTopL, Vector3.Up, new Vector2(0, 0)));
             vertices.Add(new VertexPositionNormalTexture(bTopR, Vector3.Up, new Vector2(1, 0)));
             vertices.Add(new VertexPositionNormalTexture(fTopMid, Vector3.Up, new Vector2(0.5f, 1)));
             indices.Add(st); indices.Add((ushort)(st + 1)); indices.Add((ushort)(st + 2));
 
-            // Bottom cap
             ushort sb = (ushort)vertices.Count;
             vertices.Add(new VertexPositionNormalTexture(bBotL, Vector3.Down, new Vector2(0, 0)));
             vertices.Add(new VertexPositionNormalTexture(fBotMid, Vector3.Down, new Vector2(0.5f, 1)));
             vertices.Add(new VertexPositionNormalTexture(bBotR, Vector3.Down, new Vector2(1, 0)));
             indices.Add(sb); indices.Add((ushort)(sb + 1)); indices.Add((ushort)(sb + 2));
+
+            return BuildMesh(device, vertices, indices);
+        }
+
+        public static SimpleMesh CreateReactorBackpack(GraphicsDevice device, float width = 0.95f, float height = 0.85f, float depth = 0.28f)
+        {
+            var vertices = new List<VertexPositionNormalTexture>();
+            var indices = new List<ushort>();
+
+            float hw = width * 0.5f, hh = height * 0.5f, hd = depth * 0.5f;
+
+            void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
+            {
+                ushort s = (ushort)vertices.Count;
+                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
+                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
+                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
+                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
+
+                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
+                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+            }
+
+            Vector3 f0 = new Vector3(-hw, -hh, hd);
+            Vector3 f1 = new Vector3(hw, -hh, hd);
+            Vector3 f2 = new Vector3(hw, hh, hd);
+            Vector3 f3 = new Vector3(-hw, hh, hd);
+
+            Vector3 b0 = new Vector3(-hw * 0.85f, -hh, -hd);
+            Vector3 b1 = new Vector3(hw * 0.85f, -hh, -hd);
+            Vector3 b2 = new Vector3(hw * 0.85f, hh, -hd);
+            Vector3 b3 = new Vector3(-hw * 0.85f, hh, -hd);
+
+            AddQuad(f0, f1, f2, f3, Vector3.Forward);
+            AddQuad(b1, b0, b3, b2, Vector3.Backward);
+            AddQuad(f3, f2, b2, b3, Vector3.Up);
+            AddQuad(b0, b1, f1, f0, Vector3.Down);
+            AddQuad(b0, f0, f3, b3, Vector3.Left);
+            AddQuad(f1, b1, b2, f2, Vector3.Right);
 
             return BuildMesh(device, vertices, indices);
         }
@@ -124,7 +145,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             for (int i = 0; i <= teeth; i++)
             {
                 float a = (float)i / teeth * MathF.PI * 2f;
-                float r = (i % 2 == 0) ? outerR : outerR - 0.035f; // Gear teeth indent
+                float r = (i % 2 == 0) ? outerR : outerR - 0.035f;
                 float ca = MathF.Cos(a), sa = MathF.Sin(a);
                 Vector3 n = new Vector3(ca, 0, sa);
 

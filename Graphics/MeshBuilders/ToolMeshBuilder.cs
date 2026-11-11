@@ -13,7 +13,6 @@ namespace BuildMechanic.Graphics.MeshBuilders
             var indices = new List<ushort>();
             int segs = 16;
 
-            // Hollow-ended deep impact socket
             for (int i = 0; i <= segs; i++)
             {
                 float a = (float)i / segs * MathF.PI * 2f;
@@ -65,7 +64,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
         {
             var vertices = new List<VertexPositionNormalTexture>();
             var indices = new List<ushort>();
-            int segs = 6; // Hexagonal forged bar
+            int segs = 6;
 
             for (int i = 0; i <= segs; i++)
             {
@@ -82,6 +81,56 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 ushort b = (ushort)(i * 2);
                 indices.Add(b); indices.Add((ushort)(b + 1)); indices.Add((ushort)(b + 3));
                 indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 2));
+            }
+
+            return BuildMesh(device, vertices, indices);
+        }
+
+        public static SimpleMesh CreateWelderShroud(GraphicsDevice device, float innerR = 0.014f, float outerR = 0.024f, float length = 0.07f)
+        {
+            var vertices = new List<VertexPositionNormalTexture>();
+            var indices = new List<ushort>();
+            int segs = 14;
+
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                float ca = MathF.Cos(a), sa = MathF.Sin(a);
+                Vector3 n = new Vector3(ca, 0.2f, sa);
+
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * outerR, 0, sa * outerR), n, new Vector2((float)i / segs, 1)));
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * innerR, length, sa * innerR), n, new Vector2((float)i / segs, 0)));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                ushort b = (ushort)(i * 2);
+                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
+                indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
+            }
+
+            return BuildMesh(device, vertices, indices);
+        }
+
+        public static SimpleMesh CreateSprayCup(GraphicsDevice device, float baseR = 0.038f, float topR = 0.048f, float height = 0.12f)
+        {
+            var vertices = new List<VertexPositionNormalTexture>();
+            var indices = new List<ushort>();
+            int segs = 16;
+
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                float ca = MathF.Cos(a), sa = MathF.Sin(a);
+                Vector3 n = new Vector3(ca, 0, sa);
+
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * baseR, 0, sa * baseR), n, new Vector2((float)i / segs, 1)));
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * topR, height, sa * topR), n, new Vector2((float)i / segs, 0)));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                ushort b = (ushort)(i * 2);
+                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
+                indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
             }
 
             return BuildMesh(device, vertices, indices);

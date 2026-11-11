@@ -12,6 +12,8 @@ namespace BuildMechanic.Graphics
         private SimpleMesh _socketMesh;
         private SimpleMesh _grinderDiscMesh;
         private SimpleMesh _pryBarMesh;
+        private SimpleMesh _welderShroudMesh;
+        private SimpleMesh _sprayCupMesh;
         private Texture2D _metalTex;
         private Texture2D _gripTex;
         private Texture2D _gaugeTex;
@@ -21,6 +23,8 @@ namespace BuildMechanic.Graphics
             _socketMesh = ToolMeshBuilder.CreateImpactSocket(device);
             _grinderDiscMesh = ToolMeshBuilder.CreateGrinderDisc(device);
             _pryBarMesh = ToolMeshBuilder.CreatePryBarShaft(device);
+            _welderShroudMesh = ToolMeshBuilder.CreateWelderShroud(device);
+            _sprayCupMesh = ToolMeshBuilder.CreateSprayCup(device);
 
             _metalTex = ToolTextureGenerator.CreateBrushedMetalTexture(device, 256);
             _gripTex = ToolTextureGenerator.CreateRubberGripTexture(device, 128);
@@ -77,6 +81,10 @@ namespace BuildMechanic.Graphics
             eff.World = Matrix.CreateScale(1.1f, 1f, 1.1f) * Matrix.CreateTranslation(bitPos);
             _socketMesh.Draw(dev, eff);
 
+            // LED Worklight shining on fastener
+            eff.DiffuseColor = tools.IsOperating ? new Vector3(2.4f, 2.4f, 2.6f) : new Vector3(0.7f, 0.7f, 0.8f);
+            DrawBox(eff, box, dev, bodyPos + new Vector3(0, 0.055f, -0.07f), new Vector3(0.015f, 0.015f, 0.015f));
+
             // High-torque industrial motor body (high-vis orange)
             eff.Texture = _gripTex;
             eff.DiffuseColor = new Vector3(0.95f, 0.45f, 0.12f);
@@ -89,7 +97,7 @@ namespace BuildMechanic.Graphics
             // Lithium battery pack base + fuel gauge LED
             eff.DiffuseColor = new Vector3(0.15f, 0.16f, 0.18f);
             DrawBox(eff, box, dev, battPos, new Vector3(0.10f, 0.06f, 0.13f));
-            eff.DiffuseColor = new Vector3(0.2f, 1.4f, 0.3f); // Green charge LED
+            eff.DiffuseColor = new Vector3(0.2f, 1.4f, 0.3f);
             DrawBox(eff, box, dev, battPos + new Vector3(0, 0.035f, 0.05f), new Vector3(0.04f, 0.01f, 0.02f));
         }
 
@@ -100,15 +108,12 @@ namespace BuildMechanic.Graphics
             Vector3 handlePos = hit + new Vector3(0.18f, 0.18f, 0.18f);
 
             eff.Texture = _metalTex;
-            // Chisel wedge blade (bare forged steel)
             eff.DiffuseColor = new Vector3(0.85f, 0.88f, 0.92f);
             DrawBox(eff, box, dev, bladePos, new Vector3(0.04f, 0.08f, 0.02f));
 
-            // Curved rolling-head leverage rocker
             eff.DiffuseColor = new Vector3(0.35f, 0.55f, 0.85f);
             DrawBox(eff, box, dev, rockerPos, new Vector3(0.05f, 0.08f, 0.05f));
 
-            // Blue powder-coated hex alloy shank
             eff.World = Matrix.CreateRotationX(0.78f) * Matrix.CreateRotationY(0.78f) * Matrix.CreateTranslation(handlePos);
             _pryBarMesh.Draw(dev, eff);
         }
@@ -134,8 +139,12 @@ namespace BuildMechanic.Graphics
             eff.DiffuseColor = new Vector3(0.72f, 0.75f, 0.80f);
             DrawBox(eff, box, dev, gearPos, new Vector3(0.09f, 0.07f, 0.09f));
 
-            // Ergonomic teal grinder body
+            // Auxiliary side handle
             eff.Texture = _gripTex;
+            eff.DiffuseColor = new Vector3(0.20f, 0.22f, 0.25f);
+            DrawCylinder(eff, cyl, dev, gearPos + new Vector3(-0.06f, 0, 0), 0.020f, 0.10f);
+
+            // Ergonomic teal grinder body
             eff.DiffuseColor = new Vector3(0.12f, 0.65f, 0.58f);
             DrawCylinder(eff, cyl, dev, bodyPos, 0.042f, 0.22f);
         }
@@ -151,9 +160,10 @@ namespace BuildMechanic.Graphics
             eff.DiffuseColor = tools.IsOperating ? new Vector3(2.5f, 2.5f, 2.8f) : new Vector3(0.6f, 0.6f, 0.65f);
             DrawCylinder(eff, cyl, dev, tipPos, 0.005f, 0.035f);
 
-            // Brass/ceramic gas shroud nozzle
-            eff.DiffuseColor = new Vector3(0.85f, 0.60f, 0.25f);
-            DrawCylinder(eff, cyl, dev, nozzlePos, 0.018f, 0.06f);
+            // Ceramic pink gas shroud nozzle cup
+            eff.DiffuseColor = new Vector3(0.92f, 0.65f, 0.70f);
+            eff.World = Matrix.CreateTranslation(nozzlePos);
+            _welderShroudMesh.Draw(dev, eff);
 
             // Ribbed torch handle
             eff.Texture = _gripTex;
@@ -166,17 +176,14 @@ namespace BuildMechanic.Graphics
             Vector3 probePos = hit + new Vector3(0, 0, 0.03f);
             Vector3 meterPos = hit + new Vector3(0.12f, 0.10f, 0.15f);
 
-            // Stainless needle probe
             eff.Texture = _metalTex;
-            eff.DiffuseColor = new Vector3(0.95f, 0.25f, 0.25f); // Red probe body
+            eff.DiffuseColor = new Vector3(0.95f, 0.25f, 0.25f);
             DrawCylinder(eff, cyl, dev, probePos, 0.007f, 0.07f);
 
-            // Yellow ruggedized holster body
             eff.Texture = _gripTex;
             eff.DiffuseColor = new Vector3(0.96f, 0.78f, 0.12f);
             DrawBox(eff, box, dev, meterPos, new Vector3(0.09f, 0.15f, 0.045f));
 
-            // LCD telemetry readout screen
             eff.DiffuseColor = new Vector3(0.2f, 1.3f, 0.4f);
             DrawBox(eff, box, dev, meterPos + new Vector3(0, 0.035f, 0.024f), new Vector3(0.065f, 0.045f, 0.01f));
         }
@@ -187,19 +194,16 @@ namespace BuildMechanic.Graphics
             Vector3 gaugePos = hit + new Vector3(0.07f, 0.04f, 0.07f);
             Vector3 bottlePos = hit + new Vector3(0.08f, -0.08f, 0.12f);
 
-            // Anodized blue quick coupler
             eff.Texture = _metalTex;
             eff.DiffuseColor = new Vector3(0.25f, 0.55f, 0.95f);
             DrawCylinder(eff, cyl, dev, couplerPos, 0.018f, 0.05f);
 
-            // Pressure gauge
             eff.Texture = _gaugeTex;
             eff.DiffuseColor = Vector3.One;
             DrawCylinder(eff, cyl, dev, gaugePos, 0.035f, 0.02f);
 
-            // Clear fluid catch reservoir
             eff.Texture = _metalTex;
-            eff.DiffuseColor = new Vector3(0.70f, 0.45f, 0.20f); // Hydraulic fluid amber
+            eff.DiffuseColor = new Vector3(0.70f, 0.45f, 0.20f);
             DrawCylinder(eff, cyl, dev, bottlePos, 0.038f, 0.14f);
         }
 
@@ -210,14 +214,14 @@ namespace BuildMechanic.Graphics
             Vector3 handlePos = hit + new Vector3(0, -0.08f, 0.12f);
 
             eff.Texture = _metalTex;
-            eff.DiffuseColor = new Vector3(0.85f, 0.88f, 0.92f); // Chrome body
+            eff.DiffuseColor = new Vector3(0.85f, 0.88f, 0.92f);
             DrawCylinder(eff, cyl, dev, nozzlePos, 0.016f, 0.06f);
 
-            // Paint cup with active palette tint
+            // Translucent nylon paint cup
             eff.DiffuseColor = ArmorDecal.PaintPalette[tools.ActiveColorIndex].ToVector3();
-            DrawCylinder(eff, cyl, dev, cupPos, 0.045f, 0.11f);
+            eff.World = Matrix.CreateTranslation(cupPos);
+            _sprayCupMesh.Draw(dev, eff);
 
-            // Pistol grip
             eff.Texture = _gripTex;
             eff.DiffuseColor = new Vector3(0.22f, 0.24f, 0.26f);
             DrawBox(eff, box, dev, handlePos, new Vector3(0.04f, 0.12f, 0.06f));
@@ -240,6 +244,8 @@ namespace BuildMechanic.Graphics
             _socketMesh?.Dispose();
             _grinderDiscMesh?.Dispose();
             _pryBarMesh?.Dispose();
+            _welderShroudMesh?.Dispose();
+            _sprayCupMesh?.Dispose();
             _metalTex?.Dispose();
             _gripTex?.Dispose();
             _gaugeTex?.Dispose();
