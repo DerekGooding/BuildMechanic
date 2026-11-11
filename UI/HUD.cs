@@ -253,7 +253,7 @@ namespace BuildMechanic.UI
             _font.DrawString(sb, "C: Cycle Sector | F: Focus", new Vector2(x + 10, y + 39), Color.Silver, 1.2f);
             _font.DrawString(sb, "T: Proving Grounds Live Test", new Vector2(x + 10, y + 54), Color.Gold, 1.2f);
             _font.DrawString(sb, "P: Cycle Paint Color", new Vector2(x + 10, y + 69), Color.Silver, 1.2f);
-            _font.DrawString(sb, "Space: Overview | U: Shop", new Vector2(x + 10, y + 84), Color.Silver, 1.2f);
+            _font.DrawString(sb, "Space: Overview | U: Shop | L: Viewer", new Vector2(x + 10, y + 84), Color.Silver, 1.15f);
         }
 
         private void DrawCompletionModal(SpriteBatch sb, int sw, int sh, ContractManager contractManager)

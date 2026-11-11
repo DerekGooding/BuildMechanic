@@ -171,6 +171,25 @@ namespace BuildMechanic
                 _contractManager.AdvanceToNextContract(_chassis);
             }
 
+            // Launch 3D Model Inspector & Diagnostics Library (L key)
+            if (kbd.IsKeyDown(Keys.L) && _prevKeyboard.IsKeyUp(Keys.L))
+            {
+                try
+                {
+                    string exePath = Environment.ProcessPath;
+                    if (!string.IsNullOrEmpty(exePath))
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = exePath,
+                            Arguments = "--model-viewer",
+                            UseShellExecute = true
+                        });
+                    }
+                }
+                catch { /* Ignore launch exception in headless or sandbox environments */ }
+            }
+
             // Update camera
             _camera.Update(gameTime, GraphicsDevice.Viewport);
 
