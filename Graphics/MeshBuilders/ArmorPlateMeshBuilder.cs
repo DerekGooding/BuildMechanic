@@ -24,15 +24,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             // Clockwise quad helper
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal, Vector2 uv0, Vector2 uv1, Vector2 uv2, Vector2 uv3)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, uv0));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, uv1));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, uv2));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, uv3));
-
-                // Clockwise outward facing triangles
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal, uv0, uv1, uv2, uv3);
             }
 
             // 1. Faceted Front Ballistic Prow (Center peak raised slightly for ballistic slope)
@@ -46,11 +38,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             // 4 faceted deflection triangles around central prow ridge
             void AddTri(Vector3 a, Vector3 b, Vector3 c, Vector3 normal, Vector2 uva, Vector2 uvb, Vector2 uvc)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(a, normal, uva));
-                vertices.Add(new VertexPositionNormalTexture(b, normal, uvb));
-                vertices.Add(new VertexPositionNormalTexture(c, normal, uvc));
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
+                MeshGeometryHelper.AddTri(vertices, indices, a, b, c, normal, uva, uvb, uvc);
             }
 
             Vector3 nLower = Vector3.Normalize(new Vector3(0, -0.2f, 1));
@@ -102,14 +90,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal, Vector2 uv0, Vector2 uv1, Vector2 uv2, Vector2 uv3)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, uv0));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, uv1));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, uv2));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, uv3));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal, uv0, uv1, uv2, uv3);
             }
 
             // Arched clamshell pauldron geometry
@@ -154,14 +135,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal, Vector2 uv0, Vector2 uv1, Vector2 uv2, Vector2 uv3)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, uv0));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, uv1));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, uv2));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, uv3));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal, uv0, uv1, uv2, uv3);
             }
 
             // Tapered angular shin guard with vertical prow crest

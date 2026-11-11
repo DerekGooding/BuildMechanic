@@ -16,14 +16,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal, Vector2 uv0, Vector2 uv1, Vector2 uv2, Vector2 uv3)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, uv0));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, uv1));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, uv2));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, uv3));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal, uv0, uv1, uv2, uv3);
             }
 
             // Tapered hexagonal armored forearm from elbow (y=0) to wrist (y=-length)
@@ -58,17 +51,10 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal);
             }
 
-            // 3 Heavy Industrial Claw Fingers angled inwards
+            // 3 Heavy Industrial Claw Fingers angled inwards with solid 3D geometry
             for (int i = 0; i < 3; i++)
             {
                 float angle = (float)i / 3f * MathF.PI * 2f;
@@ -79,6 +65,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
                 float fw = 0.035f;
                 Vector3 r = new Vector3(-sa * fw, 0, ca * fw);
+                Vector3 depthOffset = new Vector3(-ca * 0.025f, 0, -sa * 0.025f);
 
                 Vector3 b0 = basePos - r;
                 Vector3 b1 = basePos + r;
@@ -88,7 +75,14 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 Vector3 n = new Vector3(ca, -0.4f, sa);
                 n.Normalize();
 
+                // Front gripping face & back armor face
                 AddQuad(b0, b1, t1, t0, n);
+                AddQuad(b1 + depthOffset, b0 + depthOffset, t0 + depthOffset, t1 + depthOffset, -n);
+
+                // Side flanks
+                Vector3 rNorm = Vector3.Normalize(r);
+                AddQuad(b1, b1 + depthOffset, t1 + depthOffset, t1, rNorm);
+                AddQuad(b0 + depthOffset, b0, t0, t0 + depthOffset, -rNorm);
             }
 
             return BuildMesh(device, vertices, indices);
@@ -103,14 +97,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal);
             }
 
             // Armored calf stanchion column with shin spine
@@ -144,14 +131,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal);
             }
 
             // Flared hexagonal heavy foot pad

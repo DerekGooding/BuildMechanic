@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using BuildMechanic.Graphics.MeshBuilders;
 
 namespace BuildMechanic.Graphics
 {
@@ -45,25 +46,15 @@ namespace BuildMechanic.Graphics
 
             void AddFace(Vector3 normal, Vector3 up, Vector3 right, float wDist, float hDist, float dDist)
             {
-                ushort startIndex = (ushort)vertices.Count;
                 Vector3 c = normal * dDist;
                 Vector3 p0 = c - right * wDist - up * hDist;
                 Vector3 p1 = c + right * wDist - up * hDist;
                 Vector3 p2 = c + right * wDist + up * hDist;
                 Vector3 p3 = c - right * wDist + up * hDist;
 
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
-
-                indices.Add(startIndex);
-                indices.Add((ushort)(startIndex + 1));
-                indices.Add((ushort)(startIndex + 2));
-
-                indices.Add(startIndex);
-                indices.Add((ushort)(startIndex + 2));
-                indices.Add((ushort)(startIndex + 3));
+                MeshGeometryHelper.AddQuad(
+                    vertices, indices, p0, p1, p2, p3, normal,
+                    new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
             }
 
             // 6 faces with proper outward normals
@@ -136,9 +127,7 @@ namespace BuildMechanic.Graphics
 
             for (int i = 0; i < segments; i++)
             {
-                indices.Add(topCenterIdx);
-                indices.Add((ushort)(topCenterIdx + 1 + i));
-                indices.Add((ushort)(topCenterIdx + 2 + i));
+                MeshGeometryHelper.AddTopCapTri(indices, topCenterIdx, (ushort)i);
             }
 
             // Bottom Cap (-Y)
@@ -155,9 +144,7 @@ namespace BuildMechanic.Graphics
 
             for (int i = 0; i < segments; i++)
             {
-                indices.Add(botCenterIdx);
-                indices.Add((ushort)(botCenterIdx + 2 + i));
-                indices.Add((ushort)(botCenterIdx + 1 + i));
+                MeshGeometryHelper.AddBottomCapTri(indices, botCenterIdx, (ushort)i);
             }
 
             var vb = new VertexBuffer(device, typeof(VertexPositionNormalTexture), vertices.Count, BufferUsage.WriteOnly);

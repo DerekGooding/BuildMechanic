@@ -25,7 +25,8 @@ namespace BuildMechanic.Inspector
             InspectorCamera camera,
             InspectorRenderMode mode,
             bool wireframe,
-            bool grid)
+            bool grid,
+            bool doubleSided = false)
         {
             sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
 
@@ -33,7 +34,7 @@ namespace BuildMechanic.Inspector
             int sh = vp.Height;
 
             DrawSidebar(sb, catalog, sh);
-            DrawTopBar(sb, catalog, sw, mode, wireframe, grid, camera.IsSpinning);
+            DrawTopBar(sb, catalog, sw, mode, wireframe, grid, camera.IsSpinning, doubleSided);
             DrawBottomBar(sb, sw, sh);
 
             sb.End();
@@ -100,7 +101,8 @@ namespace BuildMechanic.Inspector
             InspectorRenderMode mode,
             bool wireframe,
             bool grid,
-            bool spinning)
+            bool spinning,
+            bool doubleSided)
         {
             var model = catalog.ActiveModel;
             int sideW = 270;
@@ -123,7 +125,7 @@ namespace BuildMechanic.Inspector
             }
 
             // Mode Pills (top-right)
-            int pillX = sw - 480;
+            int pillX = sw - 560;
             int pillY = 14;
 
             DrawPill(sb, ref pillX, pillY, "LIT [L]", mode == InspectorRenderMode.ShadedLit);
@@ -131,6 +133,7 @@ namespace BuildMechanic.Inspector
             DrawPill(sb, ref pillX, pillY, "NORMALS [N]", mode == InspectorRenderMode.Normals);
             DrawPill(sb, ref pillX, pillY, "WIREFRAME [W]", wireframe);
             DrawPill(sb, ref pillX, pillY, "GRID [G]", grid);
+            DrawPill(sb, ref pillX, pillY, "2-SIDED [C]", doubleSided);
             DrawPill(sb, ref pillX, pillY, "SPIN [SPACE]", spinning);
         }
 
@@ -153,7 +156,7 @@ namespace BuildMechanic.Inspector
             sb.Draw(_pixel, new Rectangle(sideW, sh - botH, sw - sideW, botH), new Color(14, 18, 24, 235));
             sb.Draw(_pixel, new Rectangle(sideW, sh - botH, sw - sideW, 1), new Color(35, 50, 70));
 
-            string hints = "[ / ]: Next/Prev Model  |  UP/DOWN: Category  |  1-4: Preset Angles  |  F: Focus Bounds  |  ESC: Exit";
+            string hints = "[ / ]: Next/Prev | ARROWS: Nav | C: 2-Sided | 1-4: Angles | F: Focus | ESC: Exit";
             _font.DrawString(sb, hints, new Vector2(sideW + 20, sh - botH + 7), new Color(140, 160, 180), 1.2f);
         }
 

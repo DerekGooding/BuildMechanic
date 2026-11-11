@@ -17,14 +17,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal, Vector2 uv0, Vector2 uv1, Vector2 uv2, Vector2 uv3)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, uv0));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, uv1));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, uv2));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, uv3));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal, uv0, uv1, uv2, uv3);
             }
 
             Vector3 fBotL = new Vector3(-hw * 0.85f, -hh, hd * 0.8f);
@@ -59,14 +52,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal);
             }
 
             Vector3 fBotMid = new Vector3(0, -hh, hd);
@@ -82,17 +68,8 @@ namespace BuildMechanic.Graphics.MeshBuilders
             AddQuad(fBotMid, bBotR, bTopR, fTopMid, nR);
             AddQuad(bBotR, bBotL, bTopL, bTopR, Vector3.Forward);
 
-            ushort st = (ushort)vertices.Count;
-            vertices.Add(new VertexPositionNormalTexture(bTopL, Vector3.Up, new Vector2(0, 0)));
-            vertices.Add(new VertexPositionNormalTexture(bTopR, Vector3.Up, new Vector2(1, 0)));
-            vertices.Add(new VertexPositionNormalTexture(fTopMid, Vector3.Up, new Vector2(0.5f, 1)));
-            indices.Add(st); indices.Add((ushort)(st + 1)); indices.Add((ushort)(st + 2));
-
-            ushort sb = (ushort)vertices.Count;
-            vertices.Add(new VertexPositionNormalTexture(bBotL, Vector3.Down, new Vector2(0, 0)));
-            vertices.Add(new VertexPositionNormalTexture(fBotMid, Vector3.Down, new Vector2(0.5f, 1)));
-            vertices.Add(new VertexPositionNormalTexture(bBotR, Vector3.Down, new Vector2(1, 0)));
-            indices.Add(sb); indices.Add((ushort)(sb + 1)); indices.Add((ushort)(sb + 2));
+            MeshGeometryHelper.AddTri(vertices, indices, bTopL, bTopR, fTopMid, Vector3.Up, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 1));
+            MeshGeometryHelper.AddTri(vertices, indices, bBotL, fBotMid, bBotR, Vector3.Down, new Vector2(0, 0), new Vector2(0.5f, 1), new Vector2(1, 0));
 
             return BuildMesh(device, vertices, indices);
         }
@@ -106,14 +83,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal);
             }
 
             Vector3 f0 = new Vector3(-hw, -hh, hd);
@@ -156,8 +126,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             for (int i = 0; i < teeth; i++)
             {
                 ushort b = (ushort)(i * 2);
-                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
-                indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
+                MeshGeometryHelper.AddCylinderWall(indices, b);
             }
 
             return BuildMesh(device, vertices, indices);
@@ -182,8 +151,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             for (int i = 0; i < segs; i++)
             {
                 ushort b = (ushort)(i * 2);
-                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
-                indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
+                MeshGeometryHelper.AddCylinderWall(indices, b);
             }
 
             return BuildMesh(device, vertices, indices);

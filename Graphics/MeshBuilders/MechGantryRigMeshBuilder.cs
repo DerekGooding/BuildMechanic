@@ -16,14 +16,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal)
             {
-                ushort s = (ushort)vertices.Count;
-                vertices.Add(new VertexPositionNormalTexture(p0, normal, new Vector2(0, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p1, normal, new Vector2(1, 1)));
-                vertices.Add(new VertexPositionNormalTexture(p2, normal, new Vector2(1, 0)));
-                vertices.Add(new VertexPositionNormalTexture(p3, normal, new Vector2(0, 0)));
-
-                indices.Add(s); indices.Add((ushort)(s + 2)); indices.Add((ushort)(s + 1));
-                indices.Add(s); indices.Add((ushort)(s + 3)); indices.Add((ushort)(s + 2));
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal);
             }
 
             Vector3 f0 = new Vector3(-hw, -hh, hd);
@@ -65,8 +58,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             for (int i = 0; i < segs; i++)
             {
                 ushort b = (ushort)(i * 2);
-                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
-                indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
+                MeshGeometryHelper.AddCylinderWall(indices, b);
             }
 
             return BuildMesh(device, vertices, indices);
@@ -91,8 +83,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             for (int i = 0; i < segs; i++)
             {
                 ushort b = (ushort)(i * 2);
-                indices.Add(b); indices.Add((ushort)(b + 3)); indices.Add((ushort)(b + 1));
-                indices.Add(b); indices.Add((ushort)(b + 2)); indices.Add((ushort)(b + 3));
+                MeshGeometryHelper.AddCylinderWall(indices, b);
             }
 
             return BuildMesh(device, vertices, indices);

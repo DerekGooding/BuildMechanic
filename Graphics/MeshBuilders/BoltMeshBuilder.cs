@@ -99,9 +99,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
             for (int i = 0; i < hexSegs; i++)
             {
-                indices.Add(topCenterIdx);
-                indices.Add((ushort)(topCenterIdx + 1 + i));
-                indices.Add((ushort)(topCenterIdx + 2 + i));
+                MeshGeometryHelper.AddTopCapTri(indices, topCenterIdx, (ushort)i);
             }
 
             return BuildMesh(device, vertices, indices);
@@ -152,8 +150,8 @@ namespace BuildMechanic.Graphics.MeshBuilders
                     ushort b2 = (ushort)(row2 + i);
                     ushort b3 = (ushort)(row2 + i + 1);
 
-                    indices.Add(b0); indices.Add(b2); indices.Add(b1);
-                    indices.Add(b1); indices.Add(b2); indices.Add(b3);
+                    indices.Add(b0); indices.Add(b1); indices.Add(b2);
+                    indices.Add(b1); indices.Add(b3); indices.Add(b2);
                 }
             }
 

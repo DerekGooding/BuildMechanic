@@ -20,6 +20,7 @@ namespace BuildMechanic.Inspector
         private InspectorRenderMode _mode = InspectorRenderMode.ShadedLit;
         private bool _wireframe = false;
         private bool _drawGrid = true;
+        private bool _doubleSided = false;
         private KeyboardState _prevKbd;
 
         private RasterizerState _wireframeState;
@@ -110,6 +111,7 @@ namespace BuildMechanic.Inspector
             if (kbd.IsKeyDown(Keys.N) && _prevKbd.IsKeyUp(Keys.N)) _mode = InspectorRenderMode.Normals;
             if (kbd.IsKeyDown(Keys.W) && _prevKbd.IsKeyUp(Keys.W)) _wireframe = !_wireframe;
             if (kbd.IsKeyDown(Keys.G) && _prevKbd.IsKeyUp(Keys.G)) _drawGrid = !_drawGrid;
+            if (kbd.IsKeyDown(Keys.C) && _prevKbd.IsKeyUp(Keys.C)) _doubleSided = !_doubleSided;
             if (kbd.IsKeyDown(Keys.Space) && _prevKbd.IsKeyUp(Keys.Space)) _camera.IsSpinning = !_camera.IsSpinning;
 
             // Camera angle presets
@@ -167,7 +169,8 @@ namespace BuildMechanic.Inspector
             if (model != null)
             {
                 GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-                GraphicsDevice.RasterizerState = _wireframe ? _wireframeState : RasterizerState.CullCounterClockwise;
+                GraphicsDevice.RasterizerState = _wireframe ? _wireframeState :
+                    (_doubleSided ? RasterizerState.CullNone : RasterizerState.CullCounterClockwise);
                 GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
 
                 model.Draw(GraphicsDevice, _effect, _mode);
@@ -182,7 +185,8 @@ namespace BuildMechanic.Inspector
                 _camera,
                 _mode,
                 _wireframe,
-                _drawGrid);
+                _drawGrid,
+                _doubleSided);
 
             base.Draw(gameTime);
         }
