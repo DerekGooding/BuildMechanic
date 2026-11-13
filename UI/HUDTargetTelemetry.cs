@@ -73,7 +73,7 @@ namespace BuildMechanic.UI
             else if (tools.HoveredBolt != null)
                 DrawFastenerTelemetry(sb, pixel, font, x, y, w, tools.HoveredBolt);
             else if (tools.HoveredCrack != null)
-                DrawCrackTelemetry(sb, pixel, font, x, y, w, tools.HoveredCrack);
+                DrawCrackTelemetry(sb, pixel, font, x, y, w, tools.HoveredCrack, tools.HoveredPlate);
             else if (tools.HoveredPlate != null)
                 DrawPlateTelemetry(sb, pixel, font, x, y, w, tools.HoveredPlate);
         }
@@ -119,17 +119,32 @@ namespace BuildMechanic.UI
             font.DrawString(sb, $"CLAMP LOAD: {torqueNm} N*m | SPEC: 145 N*m | GRADE: 10.9", new Vector2(x + 14, y + 78), Color.Silver, 1.15f);
         }
 
-        private static void DrawCrackTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, CrackSegment crack)
+        private static void DrawCrackTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, CrackSegment crack, ArmorPlate plate)
         {
             font.DrawString(sb, "STRUCTURAL METALLURGICAL DEFECT", new Vector2(x + 14, y + 12), Color.OrangeRed, 1.55f);
             font.DrawString(sb, $"REPAIR STAGE: {crack.Stage.ToString().ToUpper()}", new Vector2(x + 14, y + 36), Color.Yellow, 1.35f);
 
             DrawGaugeBar(sb, pixel, x + 14, y + 62, w - 28, 8, crack.StageProgress, Color.Orange);
 
-            string action = crack.Stage == CrackStage.Fractured
-                ? "ACTION REQUIRED: PREP WELD GROOVE [HOLD 4: GRINDER]"
-                : (crack.Stage == CrackStage.PreppedGroove ? "ACTION REQUIRED: DEPOSIT WELD BEAD [HOLD 5: WELDER]" : "REPAIR COMPLETE - WELD BEAD FLUSH");
-            font.DrawString(sb, action, new Vector2(x + 14, y + 78), Color.Silver, 1.15f);
+            string action;
+            Color actionCol = Color.Silver;
+            if (plate != null && plate.State == PlateMountState.Mounted)
+            {
+                action = "ACTION: DETACH PLATE TO BENCH FIRST [UNTHREAD BOLTS & PRY]";
+                actionCol = Color.Tomato;
+            }
+            else
+            {
+                action = crack.Stage switch
+                {
+                    CrackStage.Fractured => "ACTION REQUIRED: PREP WELD GROOVE [HOLD 4: GRINDER]",
+                    CrackStage.PreppedGroove => "ACTION REQUIRED: DEPOSIT WELD BEAD [HOLD 5: WELDER]",
+                    CrackStage.WeldedBead => "ACTION REQUIRED: GRIND BEAD FLUSH [HOLD 4: GRINDER]",
+                    _ => "REPAIR COMPLETE - WELD BEAD FLUSH"
+                };
+                if (crack.Stage == CrackStage.FlushFinished) actionCol = Color.LimeGreen;
+            }
+            font.DrawString(sb, action, new Vector2(x + 14, y + 78), actionCol, 1.15f);
         }
 
         private static void DrawPlateTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, ArmorPlate p)
@@ -140,8 +155,33 @@ namespace BuildMechanic.UI
             Color integCol = p.Integrity > 90 ? Color.LimeGreen : (p.Integrity > 50 ? Color.Gold : Color.OrangeRed);
             DrawGaugeBar(sb, pixel, x + 14, y + 62, w - 28, 8, p.Integrity / 100f, integCol);
 
-            string mountStatus = p.State == PlateMountState.Mounted ? "MOUNTED FIRMLY" : "DETACHED ON RIG / CRANE SLING";
-            font.DrawString(sb, $"MOUNT STATE: {mountStatus}", new Vector2(x + 14, y + 78), Color.DarkGray, 1.15f);
+            string mountStatus;
+            Color mountCol;
+            if (p.State == PlateMountState.Mounted)
+            {
+                if (p.CanDetach)
+                {
+                    mountStatus = "BOLTS REMOVED -> READY TO PRY DETACH [CLICK 3: PRY BAR]";
+                    mountCol = Color.Yellow;
+                }
+                else
+                {
+                    int remaining = p.Bolts.Count(b => !b.IsRemoved);
+                    mountStatus = $"LOCKED ON CHASSIS -> UNTHREAD {remaining} BOLTS FIRST [2: DRIVER]";
+                    mountCol = Color.Tomato;
+                }
+            }
+            else if (p.State == PlateMountState.Detached)
+            {
+                mountStatus = "ON WORKBENCH RIG -> READY TO REMOUNT [CLICK 3: PRY BAR]";
+                mountCol = Color.Cyan;
+            }
+            else
+            {
+                mountStatus = "TRANSITIONING RIG...";
+                mountCol = Color.Gold;
+            }
+            font.DrawString(sb, $"STATUS: {mountStatus}", new Vector2(x + 14, y + 78), mountCol, 1.15f);
         }
 
         private static void DrawGaugeBar(SpriteBatch sb, Texture2D pixel, int x, int y, int width, int height, float progress, Color fill)

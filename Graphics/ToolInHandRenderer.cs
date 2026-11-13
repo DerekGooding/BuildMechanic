@@ -58,38 +58,39 @@ namespace BuildMechanic.Graphics
             SimpleMesh discMesh, Texture2D metalTex, Texture2D gripTex,
             ToolManager tools, Vector3 hit, float vibration, float spinAngle)
         {
-            Vector3 discPos = hit + new Vector3(0, 0.01f, 0.02f);
-            Vector3 guardPos = hit + new Vector3(0, 0.025f, 0.05f);
-            Vector3 gearPos = hit + new Vector3(0.06f, 0.03f, 0.08f) + new Vector3(vibration, 0, 0);
-            Vector3 bodyPos = hit + new Vector3(0.17f, 0.04f, 0.17f) + new Vector3(vibration, 0, 0);
+            // Compact 96mm grinder oriented so cutting edge touches hit and body offsets into lower-right foreground
+            Vector3 discPos = hit + new Vector3(0.032f, 0.024f, 0.038f);
+            Vector3 guardPos = discPos + new Vector3(0.012f, 0.016f, 0.022f);
+            Vector3 gearPos = discPos + new Vector3(0.032f, 0.020f, 0.035f) + new Vector3(vibration, 0, 0);
+            Vector3 bodyPos = gearPos + new Vector3(0.08f, -0.05f, 0.08f) + new Vector3(vibration, 0, 0);
 
-            // Abrasive cut-off disc
+            // Abrasive cut-off disc angled ~25 deg along cutting plane
             eff.Texture = metalTex;
             eff.DiffuseColor = tools.IsOperating ? new Vector3(1.25f, 0.85f, 0.45f) : new Vector3(0.35f, 0.32f, 0.30f);
-            eff.World = Matrix.CreateRotationY(spinAngle) * Matrix.CreateTranslation(discPos);
+            eff.World = Matrix.CreateRotationZ(-0.40f) * Matrix.CreateRotationY(spinAngle) * Matrix.CreateTranslation(discPos);
             discMesh.Draw(dev, eff);
 
-            // Stamped steel spark deflection guard
+            // Stamped steel spark deflection guard mounted behind cutting edge
             eff.DiffuseColor = new Vector3(0.22f, 0.24f, 0.26f);
-            DrawBox(eff, box, dev, guardPos, new Vector3(0.14f, 0.025f, 0.10f));
+            DrawBox(eff, box, dev, guardPos, new Vector3(0.085f, 0.016f, 0.065f));
 
-            // Cast aluminum gearhead casing
+            // Compact cast aluminum gearhead casing
             eff.DiffuseColor = new Vector3(0.72f, 0.75f, 0.80f);
-            DrawBox(eff, box, dev, gearPos, new Vector3(0.09f, 0.07f, 0.09f));
+            DrawBox(eff, box, dev, gearPos, new Vector3(0.060f, 0.048f, 0.060f));
 
             // Spindle lock button
             eff.DiffuseColor = new Vector3(0.15f, 0.16f, 0.18f);
-            DrawBox(eff, box, dev, gearPos + new Vector3(0, 0.04f, 0), new Vector3(0.025f, 0.015f, 0.025f));
+            DrawBox(eff, box, dev, gearPos + new Vector3(0, 0.028f, 0), new Vector3(0.018f, 0.012f, 0.018f));
 
             // Auxiliary knurled side handle
             eff.Texture = gripTex;
             eff.DiffuseColor = new Vector3(0.20f, 0.22f, 0.25f);
-            eff.World = Matrix.CreateRotationZ(1.57f) * Matrix.CreateTranslation(gearPos + new Vector3(-0.06f, 0, 0));
+            eff.World = Matrix.CreateScale(0.022f, 0.075f, 0.022f) * Matrix.CreateRotationZ(1.57f) * Matrix.CreateTranslation(gearPos + new Vector3(-0.045f, 0.01f, 0));
             cyl.Draw(dev, eff);
 
-            // Industrial motor barrel
+            // Industrial motor barrel extending diagonally into lower-right foreground
             eff.DiffuseColor = new Vector3(0.12f, 0.65f, 0.58f);
-            eff.World = Matrix.CreateRotationX(0.78f) * Matrix.CreateTranslation(bodyPos);
+            eff.World = Matrix.CreateScale(0.042f, 0.16f, 0.042f) * Matrix.CreateRotationX(0.78f) * Matrix.CreateRotationY(0.40f) * Matrix.CreateTranslation(bodyPos);
             cyl.Draw(dev, eff);
         }
 
@@ -270,12 +271,6 @@ namespace BuildMechanic.Graphics
         {
             eff.World = Matrix.CreateScale(size) * Matrix.CreateTranslation(pos);
             box.Draw(dev, eff);
-        }
-
-        private static void DrawCylinder(BasicEffect eff, SimpleMesh cyl, GraphicsDevice dev, Vector3 pos, float r, float h)
-        {
-            eff.World = Matrix.CreateScale(r * 2f, h, r * 2f) * Matrix.CreateTranslation(pos);
-            cyl.Draw(dev, eff);
         }
     }
 }

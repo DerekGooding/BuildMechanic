@@ -72,6 +72,15 @@ namespace BuildMechanic.Tools
             ActiveColorIndex = (ActiveColorIndex + 1) % ArmorDecal.PaintPalette.Length;
         }
 
+        public bool CanRepairCrack(CrackSegment crack, ArmorPlate plate, ToolType tool)
+        {
+            if (crack == null || crack.IsRepaired) return false;
+            if (plate != null && plate.State != PlateMountState.Detached) return false;
+            if (tool == ToolType.AngleGrinder) return crack.Stage == CrackStage.Fractured || crack.Stage == CrackStage.WeldedBead;
+            if (tool == ToolType.Welder) return crack.Stage == CrackStage.PreppedGroove;
+            return false;
+        }
+
         public void Update(GameTime gameTime, Ray ray, MechChassis chassis, VFXManager vfx)
         {
             Update(gameTime, ray, chassis, vfx?.Sparks, vfx?.Smoke, vfx?.Fluid, vfx?.Aerosol);
@@ -174,6 +183,10 @@ namespace BuildMechanic.Tools
                             HoveredPlate.ToggleMount();
                             AudioManager.Instance?.PlayPlateDetach();
                         }
+                        else if (HoveredPlate.State == PlateMountState.Mounted && !HoveredPlate.CanDetach)
+                        {
+                            AudioManager.Instance?.PlayTorqueClick();
+                        }
                         else if (HoveredPlate.State == PlateMountState.Detached)
                         {
                             HoveredPlate.ToggleMount();
@@ -183,7 +196,7 @@ namespace BuildMechanic.Tools
                     break;
 
                 case ToolType.AngleGrinder:
-                    if (isLmb && HoveredCrack != null)
+                    if (isLmb && CanRepairCrack(HoveredCrack, HoveredPlate, ToolType.AngleGrinder))
                     {
                         IsOperating = true;
                         AudioManager.Instance?.PlayGrinderLoop(true);
@@ -196,7 +209,7 @@ namespace BuildMechanic.Tools
                     break;
 
                 case ToolType.Welder:
-                    if (isLmb && HoveredCrack != null && HoveredCrack.Stage == CrackStage.PreppedGroove)
+                    if (isLmb && CanRepairCrack(HoveredCrack, HoveredPlate, ToolType.Welder))
                     {
                         IsOperating = true;
                         AudioManager.Instance?.PlayWelderLoop(true);

@@ -44,32 +44,10 @@ namespace BuildMechanic.Graphics.Textures
                         c = stripePos < 28 ? hazardYellow : hazardBlack;
                     }
 
-                    // 3. Counterbored bolt hole washer rings in the 4 corners
-                    int cx1 = 76, cx2 = width - 76;
-                    int cy1 = 76, cy2 = height - 76;
-                    float d1 = MathF.Sqrt((x - cx1) * (x - cx1) + (y - cy1) * (y - cy1));
-                    float d2 = MathF.Sqrt((x - cx2) * (x - cx2) + (y - cy1) * (y - cy1));
-                    float d3 = MathF.Sqrt((x - cx1) * (x - cx1) + (y - cy2) * (y - cy2));
-                    float d4 = MathF.Sqrt((x - cx2) * (x - cx2) + (y - cy2) * (y - cy2));
-                    float minBoltDist = Math.Min(Math.Min(d1, d2), Math.Min(d3, d4));
-
-                    if (minBoltDist < 42f)
+                    // 3. Ballistic armor panel division grooves
+                    if (distBorder > 32 && (Math.Abs(y - height / 2) <= 1 || Math.Abs(x - width / 2) <= 1))
                     {
-                        if (minBoltDist < 26f)
-                        {
-                            // Inner counterbore recess
-                            c = Color.Lerp(sootStain, bareSteel, 0.25f);
-                        }
-                        else if (minBoltDist < 36f)
-                        {
-                            // Machined circular washer seating ring
-                            c = bareSteel;
-                        }
-                        else
-                        {
-                            // Grease smudge / torque tool friction ring
-                            c = Color.Lerp(c, sootStain, 0.4f);
-                        }
+                        c = Color.Lerp(c, sootStain, 0.35f);
                     }
 
                     // 4. Ballistic pitting and fine metal scratches

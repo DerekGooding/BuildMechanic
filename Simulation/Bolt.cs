@@ -17,7 +17,7 @@ namespace BuildMechanic.Simulation
         public float SpinAngle { get; private set; } = 0.0f;
 
         public bool IsTorqued => ThreadProgress >= 0.999f;
-        public bool IsRemoved => ThreadProgress <= 0.001f;
+        public bool IsRemoved => ThreadProgress <= 0.08f;
 
         public const float MaxExtension = 0.12f;
 
@@ -49,7 +49,7 @@ namespace BuildMechanic.Simulation
             {
                 return 1; // Snapped torqued!
             }
-            if (prev > 0.0f && ThreadProgress <= 0.0f)
+            if (prev > 0.08f && ThreadProgress <= 0.08f)
             {
                 return -1; // Unthreaded!
             }

@@ -76,7 +76,7 @@ namespace BuildMechanic.Inspector
                 "Angle Grinder (Assembly)",
                 ModelCategory.ShopTools,
                 "Heavy-duty angle grinder with cast gear housing, steel disc guard, cut-off disc, and side handle.",
-                new BoundingBox(new Vector3(-0.16f, -0.08f, -0.18f), new Vector3(0.16f, 0.08f, 0.18f)),
+                new BoundingBox(new Vector3(-0.14f, -0.06f, -0.16f), new Vector3(0.14f, 0.06f, 0.16f)),
                 disc.VertexCount + 240, disc.PrimitiveCount + 130,
                 (dev, eff, mode) =>
                 {
@@ -86,11 +86,11 @@ namespace BuildMechanic.Inspector
                     disc.Draw(dev, eff);
 
                     eff.DiffuseColor = new Vector3(0.18f, 0.20f, 0.22f);
-                    eff.World = Matrix.CreateScale(0.18f, 0.02f, 0.11f) * Matrix.CreateTranslation(0, 0.005f, 0.04f);
+                    eff.World = Matrix.CreateScale(0.11f, 0.016f, 0.07f) * Matrix.CreateTranslation(0, 0.005f, 0.06f);
                     box.Draw(dev, eff);
 
                     eff.DiffuseColor = new Vector3(0.72f, 0.75f, 0.80f);
-                    eff.World = Matrix.CreateScale(0.09f, 0.08f, 0.09f) * Matrix.CreateTranslation(0, 0.02f, 0.08f);
+                    eff.World = Matrix.CreateScale(0.065f, 0.055f, 0.065f) * Matrix.CreateTranslation(0, 0.02f, 0.08f);
                     box.Draw(dev, eff);
 
                     eff.Texture = gripTex;

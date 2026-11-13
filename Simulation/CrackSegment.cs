@@ -17,8 +17,8 @@ namespace BuildMechanic.Simulation
         public string Id { get; set; }
         public List<Vector3> LocalPoints { get; set; } = new List<Vector3>();
 
-        public CrackStage Stage { get; private set; } = CrackStage.Fractured;
-        public float StageProgress { get; private set; } = 0.0f; // 0.0f to 1.0f
+        public CrackStage Stage { get; set; } = CrackStage.Fractured;
+        public float StageProgress { get; set; } = 0.0f; // 0.0f to 1.0f
 
         public bool IsRepaired => Stage == CrackStage.FlushFinished;
 

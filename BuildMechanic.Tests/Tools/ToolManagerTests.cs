@@ -79,5 +79,45 @@ namespace BuildMechanic.Tests.Tools
             Assert.Equal(bolt.Id, manager.HoveredBolt.Id);
             Assert.NotNull(manager.HoveredPlate);
         }
+
+        [Fact]
+        public void ToolManager_GrindAndWeld_RequiresDetachedPlate()
+        {
+            var manager = new ToolManager();
+            var plate = new ArmorPlate();
+            var crack = new CrackSegment
+            {
+                Stage = CrackStage.Fractured
+            };
+
+            // 1. Mounted plate -> Grinding and welding MUST be prohibited
+            Assert.Equal(PlateMountState.Mounted, plate.State);
+            Assert.False(manager.CanRepairCrack(crack, plate, ToolType.AngleGrinder));
+            Assert.False(manager.CanRepairCrack(crack, plate, ToolType.Welder));
+
+            // 2. Detached plate -> Grinding fractured crack is allowed, welding is not yet allowed
+            plate.Bolts.Clear(); // no bolts locking it
+            plate.ToggleMount();
+            plate.Update(5.0f);
+            Assert.Equal(PlateMountState.Detached, plate.State);
+
+            Assert.True(manager.CanRepairCrack(crack, plate, ToolType.AngleGrinder));
+            Assert.False(manager.CanRepairCrack(crack, plate, ToolType.Welder));
+
+            // 3. Prep the groove -> Welding allowed, grinding paused
+            crack.Stage = CrackStage.PreppedGroove;
+            Assert.False(manager.CanRepairCrack(crack, plate, ToolType.AngleGrinder));
+            Assert.True(manager.CanRepairCrack(crack, plate, ToolType.Welder));
+
+            // 4. Bead deposited -> Flush grinding allowed
+            crack.Stage = CrackStage.WeldedBead;
+            Assert.True(manager.CanRepairCrack(crack, plate, ToolType.AngleGrinder));
+            Assert.False(manager.CanRepairCrack(crack, plate, ToolType.Welder));
+
+            // 5. Finished -> Neither allowed
+            crack.Stage = CrackStage.FlushFinished;
+            Assert.False(manager.CanRepairCrack(crack, plate, ToolType.AngleGrinder));
+            Assert.False(manager.CanRepairCrack(crack, plate, ToolType.Welder));
+        }
     }
 }

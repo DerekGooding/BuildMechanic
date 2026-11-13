@@ -21,6 +21,13 @@ namespace BuildMechanic.Graphics.MeshBuilders
             float ihw = hw - chamfer;
             float ihh = hh - chamfer;
 
+            Vector2 PlanarUV(Vector3 p)
+            {
+                float u = Math.Clamp((p.X + hw) / (2f * hw), 0f, 1f);
+                float v = Math.Clamp((hh - p.Y) / (2f * hh), 0f, 1f);
+                return new Vector2(u, v);
+            }
+
             // Clockwise quad helper
             void AddQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 normal, Vector2 uv0, Vector2 uv1, Vector2 uv2, Vector2 uv3)
             {
@@ -42,16 +49,16 @@ namespace BuildMechanic.Graphics.MeshBuilders
             }
 
             Vector3 nLower = Vector3.Normalize(new Vector3(0, -0.2f, 1));
-            AddTri(f0, f1, fMid, nLower, new Vector2(0.1f, 0.9f), new Vector2(0.9f, 0.9f), new Vector2(0.5f, 0.5f));
+            AddTri(f0, f1, fMid, nLower, PlanarUV(f0), PlanarUV(f1), PlanarUV(fMid));
 
             Vector3 nRight = Vector3.Normalize(new Vector3(0.2f, 0, 1));
-            AddTri(f1, f2, fMid, nRight, new Vector2(0.9f, 0.9f), new Vector2(0.9f, 0.1f), new Vector2(0.5f, 0.5f));
+            AddTri(f1, f2, fMid, nRight, PlanarUV(f1), PlanarUV(f2), PlanarUV(fMid));
 
             Vector3 nUpper = Vector3.Normalize(new Vector3(0, 0.2f, 1));
-            AddTri(f2, f3, fMid, nUpper, new Vector2(0.9f, 0.1f), new Vector2(0.1f, 0.1f), new Vector2(0.5f, 0.5f));
+            AddTri(f2, f3, fMid, nUpper, PlanarUV(f2), PlanarUV(f3), PlanarUV(fMid));
 
             Vector3 nLeft = Vector3.Normalize(new Vector3(-0.2f, 0, 1));
-            AddTri(f3, f0, fMid, nLeft, new Vector2(0.1f, 0.1f), new Vector2(0.1f, 0.9f), new Vector2(0.5f, 0.5f));
+            AddTri(f3, f0, fMid, nLeft, PlanarUV(f3), PlanarUV(f0), PlanarUV(fMid));
 
             // 2. Beveled Outer Perimeter Chamfers
             Vector3 o0 = new Vector3(-hw, -hh, hz - chamfer);
@@ -59,10 +66,10 @@ namespace BuildMechanic.Graphics.MeshBuilders
             Vector3 o2 = new Vector3(hw, hh, hz - chamfer);
             Vector3 o3 = new Vector3(-hw, hh, hz - chamfer);
 
-            AddQuad(f3, f2, o2, o3, Vector3.Normalize(new Vector3(0, 1, 1)), new Vector2(0.1f, 0.1f), new Vector2(0.9f, 0.1f), new Vector2(1, 0), new Vector2(0, 0));
-            AddQuad(o0, o1, f1, f0, Vector3.Normalize(new Vector3(0, -1, 1)), new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.9f, 0.9f), new Vector2(0.1f, 0.9f));
-            AddQuad(o0, f0, f3, o3, Vector3.Normalize(new Vector3(-1, 0, 1)), new Vector2(0, 1), new Vector2(0.1f, 0.9f), new Vector2(0.1f, 0.1f), new Vector2(0, 0));
-            AddQuad(f1, o1, o2, f2, Vector3.Normalize(new Vector3(1, 0, 1)), new Vector2(0.9f, 0.9f), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0.9f, 0.1f));
+            AddQuad(f3, f2, o2, o3, Vector3.Normalize(new Vector3(0, 1, 1)), PlanarUV(f3), PlanarUV(f2), PlanarUV(o2), PlanarUV(o3));
+            AddQuad(o0, o1, f1, f0, Vector3.Normalize(new Vector3(0, -1, 1)), PlanarUV(o0), PlanarUV(o1), PlanarUV(f1), PlanarUV(f0));
+            AddQuad(o0, f0, f3, o3, Vector3.Normalize(new Vector3(-1, 0, 1)), PlanarUV(o0), PlanarUV(f0), PlanarUV(f3), PlanarUV(o3));
+            AddQuad(f1, o1, o2, f2, Vector3.Normalize(new Vector3(1, 0, 1)), PlanarUV(f1), PlanarUV(o1), PlanarUV(o2), PlanarUV(f2));
 
             // 3. Side Walls
             Vector3 b0 = new Vector3(-hw, -hh, -hz);
@@ -138,6 +145,13 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, normal, uv0, uv1, uv2, uv3);
             }
 
+            Vector2 PlanarUV(Vector3 p)
+            {
+                float u = Math.Clamp((p.X + hw) / (2f * hw), 0f, 1f);
+                float v = Math.Clamp((hh - p.Y) / (2f * hh), 0f, 1f);
+                return new Vector2(u, v);
+            }
+
             // Tapered angular shin guard with vertical prow crest
             float prowZ = hz + 0.016f;
             Vector3 fBotL = new Vector3(-hw * 0.85f, -hh, hz);
@@ -151,8 +165,8 @@ namespace BuildMechanic.Graphics.MeshBuilders
             Vector3 nLeft = Vector3.Normalize(new Vector3(-0.25f, 0, 1f));
             Vector3 nRight = Vector3.Normalize(new Vector3(0.25f, 0, 1f));
 
-            AddQuad(fBotL, fMidBot, fMidTop, fTopL, nLeft, new Vector2(0, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0), new Vector2(0, 0));
-            AddQuad(fMidBot, fBotR, fTopR, fMidTop, nRight, new Vector2(0.5f, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0.5f, 0));
+            AddQuad(fBotL, fMidBot, fMidTop, fTopL, nLeft, PlanarUV(fBotL), PlanarUV(fMidBot), PlanarUV(fMidTop), PlanarUV(fTopL));
+            AddQuad(fMidBot, fBotR, fTopR, fMidTop, nRight, PlanarUV(fMidBot), PlanarUV(fBotR), PlanarUV(fTopR), PlanarUV(fMidTop));
 
             // Back & sides
             Vector3 b0 = new Vector3(-hw * 0.85f, -hh, -hz);

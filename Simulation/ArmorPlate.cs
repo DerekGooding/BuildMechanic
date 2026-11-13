@@ -74,19 +74,48 @@ namespace BuildMechanic.Simulation
 
         public BoundingBox GetBoundingBox()
         {
-            Vector3 center = CurrentPosition;
+            Matrix world = GetWorldMatrix();
             Vector3 half = Dimensions * 0.5f;
-            return new BoundingBox(center - half, center + half);
+            Vector3[] corners = new Vector3[]
+            {
+                new Vector3(-half.X, -half.Y, -half.Z),
+                new Vector3(half.X, -half.Y, -half.Z),
+                new Vector3(-half.X, half.Y, -half.Z),
+                new Vector3(half.X, half.Y, -half.Z),
+                new Vector3(-half.X, -half.Y, half.Z),
+                new Vector3(half.X, -half.Y, half.Z),
+                new Vector3(-half.X, half.Y, half.Z),
+                new Vector3(half.X, half.Y, half.Z)
+            };
+            Vector3 min = new Vector3(float.MaxValue);
+            Vector3 max = new Vector3(float.MinValue);
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 worldPt = Vector3.Transform(corners[i], world);
+                min = Vector3.Min(min, worldPt);
+                max = Vector3.Max(max, worldPt);
+            }
+            return new BoundingBox(min, max);
         }
 
         public bool RayIntersects(Ray ray, out float distance)
         {
             distance = float.MaxValue;
-            var box = GetBoundingBox();
-            float? hit = ray.Intersects(box);
+            Matrix world = GetWorldMatrix();
+            Matrix invWorld = Matrix.Invert(world);
+
+            Vector3 localOrigin = Vector3.Transform(ray.Position, invWorld);
+            Vector3 localDir = Vector3.Normalize(Vector3.TransformNormal(ray.Direction, invWorld));
+            Ray localRay = new Ray(localOrigin, localDir);
+
+            Vector3 half = Dimensions * 0.5f;
+            BoundingBox localBox = new BoundingBox(-half, half);
+            float? hit = localRay.Intersects(localBox);
             if (hit.HasValue)
             {
-                distance = hit.Value;
+                Vector3 hitPointLocal = localOrigin + localDir * hit.Value;
+                Vector3 hitPointWorld = Vector3.Transform(hitPointLocal, world);
+                distance = Vector3.Distance(ray.Position, hitPointWorld);
                 return true;
             }
             return false;

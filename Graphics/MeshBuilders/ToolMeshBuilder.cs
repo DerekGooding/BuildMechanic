@@ -92,7 +92,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             return BuildMesh(device, vertices, indices);
         }
 
-        public static SimpleMesh CreateGrinderDisc(GraphicsDevice device, float outerRadius = 0.085f, float innerRadius = 0.015f, float thickness = 0.008f)
+        public static SimpleMesh CreateGrinderDisc(GraphicsDevice device, float outerRadius = 0.048f, float innerRadius = 0.010f, float thickness = 0.005f)
         {
             var vertices = new List<VertexPositionNormalTexture>();
             var indices = new List<ushort>();
