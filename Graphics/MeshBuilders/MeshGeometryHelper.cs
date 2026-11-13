@@ -50,6 +50,17 @@ namespace BuildMechanic.Graphics.MeshBuilders
             List<VertexPositionNormalTexture> vertices,
             List<ushort> indices,
             Vector3 p0, Vector3 p1, Vector3 p2,
+            Vector3 normal)
+        {
+            AddTri(
+                vertices, indices, p0, p1, p2, normal,
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 0));
+        }
+
+        public static void AddTri(
+            List<VertexPositionNormalTexture> vertices,
+            List<ushort> indices,
+            Vector3 p0, Vector3 p1, Vector3 p2,
             Vector3 normal,
             Vector2 uv0, Vector2 uv1, Vector2 uv2)
         {

@@ -166,6 +166,108 @@ namespace BuildMechanic.Graphics.MeshBuilders
             return BuildMesh(device, vertices, indices);
         }
 
+        public static SimpleMesh CreateArmoredBicep(GraphicsDevice device, float length = 0.85f, float radius = 0.17f)
+        {
+            var vertices = new List<VertexPositionNormalTexture>();
+            var indices = new List<ushort>();
+            int segs = 8;
+
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                float ca = MathF.Cos(a), sa = MathF.Sin(a);
+                Vector3 n = new Vector3(ca, 0, sa);
+
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * radius, -length, sa * radius), n, new Vector2((float)i / segs, 1)));
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * radius, 0, sa * radius), n, new Vector2((float)i / segs, 0)));
+            }
+
+            for (int i = 0; i < segs; i++)
+            {
+                ushort b = (ushort)(i * 2);
+                MeshGeometryHelper.AddCylinderWall(indices, b);
+            }
+
+            // Top shoulder trunnion cap (y = 0)
+            ushort topCenter = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(Vector3.Zero, Vector3.Up, new Vector2(0.5f, 0.5f)));
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * radius, 0, MathF.Sin(a) * radius), Vector3.Up, Vector2.Zero));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                MeshGeometryHelper.AddTopCapTri(indices, topCenter, (ushort)i);
+            }
+
+            // Bottom elbow clevis cap (y = -length)
+            ushort botCenter = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(new Vector3(0, -length, 0), Vector3.Down, new Vector2(0.5f, 0.5f)));
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * radius, -length, MathF.Sin(a) * radius), Vector3.Down, Vector2.Zero));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                MeshGeometryHelper.AddBottomCapTri(indices, botCenter, (ushort)i);
+            }
+
+            return BuildMesh(device, vertices, indices);
+        }
+
+        public static SimpleMesh CreateArmoredThigh(GraphicsDevice device, float length = 0.65f, float radius = 0.18f)
+        {
+            var vertices = new List<VertexPositionNormalTexture>();
+            var indices = new List<ushort>();
+            int segs = 8;
+
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                float ca = MathF.Cos(a), sa = MathF.Sin(a);
+                Vector3 n = new Vector3(ca, 0, sa);
+
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * radius, -length, sa * radius), n, new Vector2((float)i / segs, 1)));
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(ca * radius, 0, sa * radius), n, new Vector2((float)i / segs, 0)));
+            }
+
+            for (int i = 0; i < segs; i++)
+            {
+                ushort b = (ushort)(i * 2);
+                MeshGeometryHelper.AddCylinderWall(indices, b);
+            }
+
+            // Top hip gimbal cap (y = 0)
+            ushort topCenter = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(Vector3.Zero, Vector3.Up, new Vector2(0.5f, 0.5f)));
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * radius, 0, MathF.Sin(a) * radius), Vector3.Up, Vector2.Zero));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                MeshGeometryHelper.AddTopCapTri(indices, topCenter, (ushort)i);
+            }
+
+            // Bottom knee clevis cap (y = -length)
+            ushort botCenter = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(new Vector3(0, -length, 0), Vector3.Down, new Vector2(0.5f, 0.5f)));
+            for (int i = 0; i <= segs; i++)
+            {
+                float a = (float)i / segs * MathF.PI * 2f;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * radius, -length, MathF.Sin(a) * radius), Vector3.Down, Vector2.Zero));
+            }
+            for (int i = 0; i < segs; i++)
+            {
+                MeshGeometryHelper.AddBottomCapTri(indices, botCenter, (ushort)i);
+            }
+
+            return BuildMesh(device, vertices, indices);
+        }
+
         private static SimpleMesh BuildMesh(GraphicsDevice device, List<VertexPositionNormalTexture> vertices, List<ushort> indices)
         {
             var vb = new VertexBuffer(device, typeof(VertexPositionNormalTexture), vertices.Count, BufferUsage.WriteOnly);

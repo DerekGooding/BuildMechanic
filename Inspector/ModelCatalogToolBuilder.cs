@@ -133,14 +133,14 @@ namespace BuildMechanic.Inspector
                 new BoundingBox(new Vector3(-0.80f, -0.425f, -0.40f), new Vector3(0.80f, 0.425f, 0.40f))));
 
             // Bench Vise
-            var vise = HangarMeshBuilder.CreateBenchVise(device);
+            var vise = HangarEquipmentMeshBuilder.CreateDetailedBenchVise(device);
             catalog.RegisterDisposable(vise);
             catalog.RegisterModel(InspectableModel.FromSimpleMesh(
-                "Serrated Bench Vise",
+                "Serrated Heavy Bench Vise",
                 ModelCategory.HangarEnvironment,
-                "Heavy bench-mounted vise with hardened serrated clamping jaws and lead screw.",
-                vise, chassisTex, new Vector3(0.35f, 0.55f, 0.75f),
-                new BoundingBox(new Vector3(-0.10f, -0.08f, -0.12f), new Vector3(0.10f, 0.08f, 0.12f))));
+                "Heavy-duty cast iron workshop vise with swivel base, hardened serrated clamping jaws, and acme lead screw.",
+                vise, chassisTex, new Vector3(0.42f, 0.58f, 0.78f),
+                new BoundingBox(new Vector3(-0.11f, 0, -0.16f), new Vector3(0.11f, 0.16f, 0.18f))));
 
             // Crane Hook
             var hook = HangarMeshBuilder.CreateCraneHook(device);
@@ -152,15 +152,25 @@ namespace BuildMechanic.Inspector
                 hook, chassisTex, new Vector3(0.95f, 0.75f, 0.15f),
                 new BoundingBox(new Vector3(-0.16f, -0.18f, -0.04f), new Vector3(0.16f, 0.22f, 0.04f))));
 
-            // Lamp Shade
-            var lamp = HangarMeshBuilder.CreateLampShade(device);
+            // Pantograph Task Lamp
+            var lamp = HangarEquipmentMeshBuilder.CreateArticulatedTaskLamp(device);
             catalog.RegisterDisposable(lamp);
             catalog.RegisterModel(InspectableModel.FromSimpleMesh(
-                "Halogen Task Lamp Reflector",
+                "Articulated Pantograph Task Lamp",
                 ModelCategory.HangarEnvironment,
-                "High-intensity conical halogen reflector hood providing workbench illumination.",
-                lamp, chassisTex, new Vector3(0.95f, 0.85f, 0.25f),
-                new BoundingBox(new Vector3(-0.11f, -0.06f, -0.11f), new Vector3(0.11f, 0.06f, 0.11f))));
+                "Parallel-linkage articulated task lamp with bench C-clamp, knuckle pivot, counterbalance springs, and bell cowl.",
+                lamp, chassisTex, new Vector3(0.95f, 0.82f, 0.18f),
+                new BoundingBox(new Vector3(-0.12f, 0, -0.05f), new Vector3(0.12f, 0.38f, 0.38f))));
+
+            // CRT Diagnostic Terminal
+            var crt = HangarEquipmentMeshBuilder.CreateCRTTerminal(device);
+            catalog.RegisterDisposable(crt);
+            catalog.RegisterModel(InspectableModel.FromSimpleMesh(
+                "CRT Diagnostic Telemetry Terminal",
+                ModelCategory.HangarEnvironment,
+                "Industrial benchtop cathode-ray telemetry station with hooded anti-glare bezel, cooling louvers, and swivel pedestal.",
+                crt, chassisTex, new Vector3(0.85f, 0.88f, 0.90f),
+                new BoundingBox(new Vector3(-0.15f, 0, -0.15f), new Vector3(0.15f, 0.28f, 0.15f))));
         }
     }
 }

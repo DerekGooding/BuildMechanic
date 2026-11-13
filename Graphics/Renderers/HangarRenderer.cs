@@ -13,6 +13,7 @@ namespace BuildMechanic.Graphics.Renderers
         private readonly SimpleMesh _hookMesh;
         private readonly SimpleMesh _viseMesh;
         private readonly SimpleMesh _lampMesh;
+        private readonly SimpleMesh _crtMesh;
         private readonly SimpleMesh _spreaderMesh;
         private readonly SimpleMesh _cableMesh;
         private readonly SimpleMesh _umbilicalMesh;
@@ -34,8 +35,9 @@ namespace BuildMechanic.Graphics.Renderers
             _screenTex = HangarTextureGenerator.CreateDiagnosticScreen(device, 256);
 
             _hookMesh = HangarMeshBuilder.CreateCraneHook(device);
-            _viseMesh = HangarMeshBuilder.CreateBenchVise(device);
-            _lampMesh = HangarMeshBuilder.CreateLampShade(device);
+            _viseMesh = HangarEquipmentMeshBuilder.CreateDetailedBenchVise(device);
+            _lampMesh = HangarEquipmentMeshBuilder.CreateArticulatedTaskLamp(device);
+            _crtMesh = HangarEquipmentMeshBuilder.CreateCRTTerminal(device);
 
             _spreaderMesh = MechGantryRigMeshBuilder.CreateSpreaderBeam(device, 3.6f, 0.28f, 0.35f);
             _cableMesh = MechGantryRigMeshBuilder.CreateSuspensionCable(device, 2.4f, 0.022f);
@@ -133,19 +135,20 @@ namespace BuildMechanic.Graphics.Renderers
             DrawBox(device, effect, basePos + new Vector3(0.25f, 1.58f, -0.01f), new Vector3(0.12f, 0.03f, 0.16f));
 
             // Pneumatic Heavy Bench Vise on Table Corner
-            effect.DiffuseColor = new Vector3(0.28f, 0.52f, 0.82f);
-            effect.World = Matrix.CreateTranslation(basePos + new Vector3(-0.62f, 1.32f, 0.32f));
+            effect.DiffuseColor = new Vector3(0.35f, 0.48f, 0.68f);
+            effect.World = Matrix.CreateTranslation(basePos + new Vector3(-0.62f, 1.25f, 0.32f));
             _viseMesh.Draw(device, effect);
 
-            // Articulated Task Lamp shining down on plate cradle
+            // Articulated Pantograph Task Lamp clamped to bench edge
             effect.DiffuseColor = new Vector3(0.92f, 0.78f, 0.15f);
-            effect.World = Matrix.CreateRotationX(0.4f) * Matrix.CreateTranslation(basePos + new Vector3(-0.50f, 1.82f, -0.15f));
+            effect.World = Matrix.CreateTranslation(basePos + new Vector3(-0.55f, 1.25f, -0.32f));
             _lampMesh.Draw(device, effect);
 
-            // CRT Diagnostic Telemetry Monitor
+            // CRT Diagnostic Telemetry Terminal on Tabletop Pedestal
             effect.Texture = _screenTex;
             effect.DiffuseColor = Vector3.One;
-            DrawBox(device, effect, basePos + new Vector3(0.55f, 1.42f, -0.28f), new Vector3(0.24f, 0.20f, 0.04f));
+            effect.World = Matrix.CreateTranslation(basePos + new Vector3(0.55f, 1.25f, -0.25f));
+            _crtMesh.Draw(device, effect);
         }
 
         private void DrawBox(GraphicsDevice device, BasicEffect effect, Vector3 position, Vector3 size)
@@ -159,6 +162,7 @@ namespace BuildMechanic.Graphics.Renderers
             _hookMesh?.Dispose();
             _viseMesh?.Dispose();
             _lampMesh?.Dispose();
+            _crtMesh?.Dispose();
             _spreaderMesh?.Dispose();
             _cableMesh?.Dispose();
             _umbilicalMesh?.Dispose();

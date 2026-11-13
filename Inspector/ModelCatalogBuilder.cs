@@ -87,6 +87,26 @@ namespace BuildMechanic.Inspector
                 ring, chassisTex, new Vector3(0.75f, 0.78f, 0.82f),
                 new BoundingBox(new Vector3(-0.55f, 0, -0.55f), new Vector3(0.55f, 0.12f, 0.55f))));
 
+            // Pelvic Girdle
+            var pelvis = MechCoreMeshBuilder.CreatePelvisAssembly(device);
+            catalog.RegisterDisposable(pelvis);
+            catalog.RegisterModel(InspectableModel.FromSimpleMesh(
+                "Pelvic Girdle & Femoral Hubs",
+                ModelCategory.ChassisAndCore,
+                "Heavy faceted pelvic casting with twin femoral socket hub gimbals and sacral bulkhead.",
+                pelvis, chassisTex, new Vector3(0.70f, 0.72f, 0.76f),
+                new BoundingBox(new Vector3(-0.70f, -0.25f, -0.35f), new Vector3(0.70f, 0.25f, 0.35f))));
+
+            // Vertebral Spine
+            var spine = MechCoreMeshBuilder.CreateSpineBulkhead(device);
+            catalog.RegisterDisposable(spine);
+            catalog.RegisterModel(InspectableModel.FromSimpleMesh(
+                "Vertebral Spine & Rib Cage",
+                ModelCategory.ChassisAndCore,
+                "Reinforced spinal column with lateral armor ribs and dual clavicle crane lifting lugs.",
+                spine, chassisTex, new Vector3(0.72f, 0.75f, 0.78f),
+                new BoundingBox(new Vector3(-0.55f, -0.65f, -0.30f), new Vector3(0.55f, 0.65f, 0.30f))));
+
             // Dual-Shear Knee Joint
             var knee = MechChassisMeshBuilder.CreateKneeJoint(device);
             catalog.RegisterDisposable(knee);
@@ -110,6 +130,16 @@ namespace BuildMechanic.Inspector
 
         private static void BuildLimbModels(ModelCatalog catalog, GraphicsDevice device, Texture2D chassisTex)
         {
+            // Armored Bicep
+            var bicep = MechLimbsMeshBuilder.CreateArmoredBicep(device);
+            catalog.RegisterDisposable(bicep);
+            catalog.RegisterModel(InspectableModel.FromSimpleMesh(
+                "Armored Bicep Spar",
+                ModelCategory.LimbsAndJoints,
+                "Faceted 8-sided upper arm bone spar with shoulder trunnion and elbow clevis caps.",
+                bicep, chassisTex, new Vector3(0.75f, 0.78f, 0.82f),
+                new BoundingBox(new Vector3(-0.18f, -0.85f, -0.18f), new Vector3(0.18f, 0, 0.18f))));
+
             // Arm Forearm
             var forearm = MechLimbsMeshBuilder.CreateForearmAssembly(device);
             catalog.RegisterDisposable(forearm);
@@ -129,6 +159,16 @@ namespace BuildMechanic.Inspector
                 "Articulated hydraulic end-effector claw with knurled rubber gripping pads.",
                 claw, chassisTex, new Vector3(0.88f, 0.88f, 0.90f),
                 new BoundingBox(new Vector3(-0.15f, -0.30f, -0.15f), new Vector3(0.15f, 0, 0.15f))));
+
+            // Armored Thigh
+            var thigh = MechLimbsMeshBuilder.CreateArmoredThigh(device);
+            catalog.RegisterDisposable(thigh);
+            catalog.RegisterModel(InspectableModel.FromSimpleMesh(
+                "Armored Femoral Thigh Bone",
+                ModelCategory.LimbsAndJoints,
+                "Heavy octagonal femoral load spar with hip ball gimbal and dual-shear knee hinge.",
+                thigh, chassisTex, new Vector3(0.72f, 0.75f, 0.78f),
+                new BoundingBox(new Vector3(-0.18f, -0.65f, -0.18f), new Vector3(0.18f, 0, 0.18f))));
 
             // Calf Column
             var calf = MechLimbsMeshBuilder.CreateLowerLegCalf(device);

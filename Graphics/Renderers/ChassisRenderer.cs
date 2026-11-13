@@ -16,6 +16,10 @@ namespace BuildMechanic.Graphics.Renderers
         private readonly SimpleMesh _turretRingMesh;
         private readonly SimpleMesh _kneeMesh;
         private readonly SimpleMesh _backpackMesh;
+        private readonly SimpleMesh _pelvisMesh;
+        private readonly SimpleMesh _spineMesh;
+        private readonly SimpleMesh _bicepMesh;
+        private readonly SimpleMesh _thighMesh;
         private readonly SimpleMesh _forearmMesh;
         private readonly SimpleMesh _clawMesh;
         private readonly SimpleMesh _calfMesh;
@@ -35,6 +39,11 @@ namespace BuildMechanic.Graphics.Renderers
             _kneeMesh = MechChassisMeshBuilder.CreateKneeJoint(device, 0.16f, 0.22f);
             _backpackMesh = MechChassisMeshBuilder.CreateReactorBackpack(device, 0.95f, 0.85f, 0.28f);
 
+            _pelvisMesh = MechCoreMeshBuilder.CreatePelvisAssembly(device);
+            _spineMesh = MechCoreMeshBuilder.CreateSpineBulkhead(device);
+            _bicepMesh = MechLimbsMeshBuilder.CreateArmoredBicep(device, 0.85f, 0.17f);
+            _thighMesh = MechLimbsMeshBuilder.CreateArmoredThigh(device, 0.65f, 0.18f);
+
             _forearmMesh = MechLimbsMeshBuilder.CreateForearmAssembly(device, 0.80f, 0.22f, 0.22f);
             _clawMesh = MechLimbsMeshBuilder.CreateManipulatorClaw(device, 0.12f, 0.28f);
             _calfMesh = MechLimbsMeshBuilder.CreateLowerLegCalf(device, 0.65f, 0.24f, 0.28f);
@@ -47,7 +56,9 @@ namespace BuildMechanic.Graphics.Renderers
 
             // 1. Lower Pelvis & Turret Traversing Gear Ring
             effect.DiffuseColor = new Vector3(0.52f, 0.55f, 0.62f);
-            DrawBox(effect, new Vector3(0, 1.4f, 0), new Vector3(1.1f, 1.0f, 0.8f));
+            effect.World = Matrix.CreateTranslation(new Vector3(0, 1.4f, 0));
+            _pelvisMesh.Draw(device, effect);
+
             effect.DiffuseColor = new Vector3(0.85f, 0.78f, 0.42f);
             effect.World = Matrix.CreateTranslation(new Vector3(0, 1.95f, 0));
             _turretRingMesh.Draw(device, effect);
@@ -59,7 +70,8 @@ namespace BuildMechanic.Graphics.Renderers
 
             // 2. Heavy Upper Torso Core Frame & Fusion Reactor Backpack
             effect.DiffuseColor = new Vector3(0.65f, 0.68f, 0.74f);
-            DrawBox(effect, new Vector3(0, 2.7f, 0.05f), new Vector3(1.40f, 1.40f, 0.70f));
+            effect.World = Matrix.CreateTranslation(new Vector3(0, 2.7f, 0.05f));
+            _spineMesh.Draw(device, effect);
 
             effect.DiffuseColor = new Vector3(0.35f, 0.38f, 0.44f);
             effect.World = Matrix.CreateTranslation(new Vector3(0, 2.80f, -0.42f));
@@ -122,7 +134,8 @@ namespace BuildMechanic.Graphics.Renderers
             DrawBox(effect, new Vector3(shoulderX, shoulderY, 0.15f), new Vector3(0.9f, 0.5f, 0.6f));
             effect.DiffuseColor = new Vector3(0.68f, 0.70f, 0.76f);
             float bicepX = shoulderX + (sideSign * 0.55f);
-            DrawCylinder(effect, new Vector3(bicepX, shoulderY - 0.75f, 0.15f), 0.18f, 0.90f);
+            effect.World = Matrix.CreateTranslation(new Vector3(bicepX, shoulderY - 0.30f, 0.15f));
+            _bicepMesh.Draw(device, effect);
 
             // Chrome Hydraulic Servo Rod
             effect.DiffuseColor = new Vector3(0.92f, 0.95f, 1.0f);
@@ -145,7 +158,8 @@ namespace BuildMechanic.Graphics.Renderers
         {
             // Upper Thigh
             effect.DiffuseColor = new Vector3(0.60f, 0.63f, 0.70f);
-            DrawCylinder(effect, new Vector3(legX, 1.05f, 0), 0.18f, 0.65f);
+            effect.World = Matrix.CreateTranslation(new Vector3(legX, 1.35f, 0));
+            _thighMesh.Draw(device, effect);
 
             // Heavy Dual-Shear Knee Joint
             effect.DiffuseColor = new Vector3(0.38f, 0.40f, 0.46f);
@@ -200,6 +214,10 @@ namespace BuildMechanic.Graphics.Renderers
             _turretRingMesh?.Dispose();
             _kneeMesh?.Dispose();
             _backpackMesh?.Dispose();
+            _pelvisMesh?.Dispose();
+            _spineMesh?.Dispose();
+            _bicepMesh?.Dispose();
+            _thighMesh?.Dispose();
             _forearmMesh?.Dispose();
             _clawMesh?.Dispose();
             _calfMesh?.Dispose();
