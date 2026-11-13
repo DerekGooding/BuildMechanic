@@ -16,6 +16,7 @@ namespace BuildMechanic.Inspector
             // Textures
             var chassisTex = TextureGenerator.CreateChassisTexture(device, 256);
             var armorTex = ArmorTextureGenerator.CreateDetailedArmorTexture(device, 256, 256, true);
+            var boltHeadTex = ThreadTextureGenerator.CreateBoltHeadTexture(device, 512, 256);
             var boltTex = ThreadTextureGenerator.CreateScrewThreadTexture(device, 256, 128);
             var floorTex = HangarTextureGenerator.CreateDiamondPlateFloor(device, 256);
             var metalTex = ToolTextureGenerator.CreateBrushedMetalTexture(device, 128);
@@ -25,6 +26,7 @@ namespace BuildMechanic.Inspector
 
             catalog.RegisterDisposable(chassisTex);
             catalog.RegisterDisposable(armorTex);
+            catalog.RegisterDisposable(boltHeadTex);
             catalog.RegisterDisposable(boltTex);
             catalog.RegisterDisposable(floorTex);
             catalog.RegisterDisposable(metalTex);
@@ -39,7 +41,7 @@ namespace BuildMechanic.Inspector
             BuildLimbModels(catalog, device, chassisTex);
 
             // 3. Armor & Fasteners
-            BuildArmorAndFastenerModels(catalog, device, armorTex, boltTex);
+            BuildArmorAndFastenerModels(catalog, device, armorTex, boltHeadTex, boltTex);
 
             // 4. Gantry Suspension Rig
             BuildGantryRigModels(catalog, device, chassisTex);
@@ -191,7 +193,8 @@ namespace BuildMechanic.Inspector
                 new BoundingBox(new Vector3(-0.20f, -0.06f, -0.28f), new Vector3(0.20f, 0.06f, 0.28f))));
         }
 
-        private static void BuildArmorAndFastenerModels(ModelCatalog catalog, GraphicsDevice device, Texture2D armorTex, Texture2D boltTex)
+        private static void BuildArmorAndFastenerModels(
+            ModelCatalog catalog, GraphicsDevice device, Texture2D armorTex, Texture2D headTex, Texture2D shankTex)
         {
             // Torso Plate
             var torsoPlate = ArmorPlateMeshBuilder.CreateTorsoPlate(device, new Vector3(0.85f, 0.80f, 0.04f), 0.28f, 0.28f);
@@ -235,10 +238,11 @@ namespace BuildMechanic.Inspector
                 bolt.HeadMesh.PrimitiveCount + bolt.ShankMesh.PrimitiveCount,
                 (dev, eff, mode) =>
                 {
-                    eff.Texture = boltTex;
                     eff.DiffuseColor = Vector3.One;
                     eff.World = Matrix.Identity;
+                    eff.Texture = headTex;
                     bolt.HeadMesh.Draw(dev, eff);
+                    eff.Texture = shankTex;
                     bolt.ShankMesh.Draw(dev, eff);
                 }));
         }

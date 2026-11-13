@@ -16,7 +16,7 @@ namespace BuildMechanic.Graphics.Renderers
 
         public BoltRenderer(GraphicsDevice device)
         {
-            _headTex = ThreadTextureGenerator.CreateBoltHeadTexture(device, 256);
+            _headTex = ThreadTextureGenerator.CreateBoltHeadTexture(device, 512, 256);
             _threadTex = ThreadTextureGenerator.CreateScrewThreadTexture(device, 512, 256);
             _boltMesh = BoltMeshBuilder.CreateDetailedBolt(device, 0.045f, 0.022f, 0.054f, 0.024f, 0.08f);
         }

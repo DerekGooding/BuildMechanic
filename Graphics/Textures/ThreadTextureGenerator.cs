@@ -71,66 +71,97 @@ namespace BuildMechanic.Graphics.Textures
             return tex;
         }
 
-        public static Texture2D CreateBoltHeadTexture(GraphicsDevice device, int size = 256)
+        public static Texture2D CreateBoltHeadTexture(GraphicsDevice device, int width = 512, int height = 256)
         {
-            var tex = new Texture2D(device, size, size);
-            var data = new Color[size * size];
-            float center = size / 2f;
+            var tex = new Texture2D(device, width, height);
+            var data = new Color[width * height];
+            float headCenter = height / 2f;
             var rng = new Random(77);
 
             Color steelBase = new Color(155, 160, 168);
             Color flangeRim = new Color(220, 226, 235);
-            Color stampDark = new Color(48, 50, 56);
-            Color socketRecess = new Color(32, 34, 38);
+            Color stampDark = new Color(42, 45, 50);
+            Color socketRecess = new Color(30, 32, 36);
 
-            for (int y = 0; y < size; y++)
+            for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < size; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    float dx = (x + 0.5f) - center;
-                    float dy = (y + 0.5f) - center;
-                    float dist = MathF.Sqrt(dx * dx + dy * dy);
-                    float normDist = dist / center;
-
-                    float grain = ((float)rng.NextDouble() - 0.5f) * 0.05f;
                     Color pixel;
+                    float grain = ((float)rng.NextDouble() - 0.5f) * 0.05f;
 
-                    if (normDist < 0.28f)
+                    if (x < height)
                     {
-                        // Hex socket recess in center
-                        float socketBorder = normDist / 0.28f;
-                        pixel = socketBorder > 0.88f ? new Color(75, 78, 86) : socketRecess;
-                    }
-                    else if (normDist < 0.72f)
-                    {
-                        // Crown top surface with stamped grade markings "10.9"
-                        pixel = steelBase;
-                        // Concentric radial lathe tooling rings
-                        if ((int)(dist * 0.75f) % 7 == 0) pixel = new Color(135, 140, 148);
+                        // Left half: Circular top face [0..255]
+                        float dx = (x + 0.5f) - headCenter;
+                        float dy = (y + 0.5f) - headCenter;
+                        float dist = MathF.Sqrt(dx * dx + dy * dy);
+                        float normDist = dist / headCenter;
 
-                        // Simulated stamped markings ring
-                        if (normDist >= 0.44f && normDist <= 0.56f)
+                        if (normDist < 0.28f)
                         {
-                            float angle = MathF.Atan2(dy, dx);
-                            if (MathF.Cos(angle * 6f) > 0.65f) pixel = stampDark;
+                            // Hex socket recess in center with beveled lip
+                            float socketBorder = normDist / 0.28f;
+                            pixel = socketBorder > 0.88f ? new Color(75, 78, 86) : socketRecess;
                         }
-                    }
-                    else if (normDist < 0.95f)
-                    {
-                        // Integrated washer flange with beveled perimeter
-                        float flangeFactor = (normDist - 0.72f) / 0.23f;
-                        pixel = Color.Lerp(flangeRim, steelBase, flangeFactor);
+                        else if (normDist < 0.72f)
+                        {
+                            // Crown top surface with stamped grade markings "10.9"
+                            pixel = steelBase;
+                            if ((int)(dist * 0.75f) % 7 == 0) pixel = new Color(135, 140, 148);
+
+                            // Simulated stamped markings ring
+                            if (normDist >= 0.44f && normDist <= 0.56f)
+                            {
+                                float angle = MathF.Atan2(dy, dx);
+                                if (MathF.Cos(angle * 6f) > 0.65f) pixel = stampDark;
+                            }
+                        }
+                        else if (normDist < 0.95f)
+                        {
+                            // Integrated washer flange deck with beveled perimeter
+                            float flangeFactor = (normDist - 0.72f) / 0.23f;
+                            pixel = Color.Lerp(flangeRim, steelBase, flangeFactor);
+                        }
+                        else if (normDist <= 1.0f)
+                        {
+                            // Outer beveled edge
+                            pixel = new Color(70, 72, 80);
+                        }
+                        else
+                        {
+                            // Margin padding to prevent filtering boundary artifacts
+                            pixel = steelBase;
+                        }
                     }
                     else
                     {
-                        // Outer beveled edge
-                        pixel = new Color(60, 62, 68);
+                        // Right half: Machined Alloy Steel for hex flats & rim [256..511]
+                        float rx = (float)(x - height) / height;
+                        float ry = (float)y / height;
+
+                        float latheLine = MathF.Sin(rx * 64f * MathF.PI) * 0.04f;
+                        float vertMicro = ((float)rng.NextDouble() - 0.5f) * 0.07f;
+                        float highlight = MathF.Cos((rx * 6f % 1f) * MathF.PI - (MathF.PI * 0.5f)) * 0.12f;
+
+                        Color flatSteel = Color.Lerp(
+                            new Color(140, 145, 154),
+                            new Color(205, 212, 222),
+                            Math.Clamp(0.5f + highlight + latheLine, 0f, 1f));
+
+                        if (ry < 0.10f || ry > 0.90f)
+                        {
+                            flatSteel = Color.Lerp(flatSteel, new Color(85, 90, 98), 0.45f);
+                        }
+
+                        pixel = flatSteel;
+                        grain = vertMicro;
                     }
 
                     int r = Math.Clamp((int)(pixel.R * (1.0f + grain)), 0, 255);
                     int g = Math.Clamp((int)(pixel.G * (1.0f + grain)), 0, 255);
                     int b = Math.Clamp((int)(pixel.B * (1.0f + grain)), 0, 255);
-                    data[y * size + x] = new Color(r, g, b, 255);
+                    data[y * width + x] = new Color(r, g, b, 255);
                 }
             }
 

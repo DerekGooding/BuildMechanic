@@ -29,19 +29,25 @@ namespace BuildMechanic.Graphics.MeshBuilders
         {
             return new DetailedBoltMesh
             {
-                HeadMesh = CreateHeadMesh(device, headRadius, headHeight, flangeRadius),
+                HeadMesh = CreateHeadMesh(device, headRadius, headHeight, flangeRadius, shankRadius),
                 ShankMesh = CreateThreadedShankMesh(device, shankRadius, shankLength)
             };
         }
 
-        private static SimpleMesh CreateHeadMesh(GraphicsDevice device, float headRadius, float headHeight, float flangeRadius)
+        private static SimpleMesh CreateHeadMesh(
+            GraphicsDevice device,
+            float headRadius,
+            float headHeight,
+            float flangeRadius,
+            float shankRadius)
         {
             var vertices = new List<VertexPositionNormalTexture>();
             var indices = new List<ushort>();
 
-            // 1. Integrated Washer Flange Ring (y: 0 to 0.005)
             float flangeH = 0.005f;
-            int flangeSegs = 16;
+            int flangeSegs = 24;
+
+            // 1. Integrated Washer Flange Outer Rim (y: 0 to flangeH)
             for (int i = 0; i <= flangeSegs; i++)
             {
                 float a = (float)i / flangeSegs * MathF.PI * 2f;
@@ -50,8 +56,10 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 Vector3 n = new Vector3(MathF.Cos(a), 0, MathF.Sin(a));
                 float u = (float)i / flangeSegs;
 
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(x, 0, z), n, new Vector2(u, 1)));
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(x, flangeH, z), n, new Vector2(u, 0.85f)));
+                vertices.Add(new VertexPositionNormalTexture(
+                    new Vector3(x, 0, z), n, new Vector2(0.5f + u * 0.48f, 0.98f)));
+                vertices.Add(new VertexPositionNormalTexture(
+                    new Vector3(x, flangeH, z), n, new Vector2(0.5f + u * 0.48f, 0.88f)));
             }
             for (int i = 0; i < flangeSegs; i++)
             {
@@ -59,7 +67,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 MeshGeometryHelper.AddCylinderWall(indices, b);
             }
 
-            // Bottom Washer Seating Deck (y = 0)
+            // 2. Bottom Washer Seating Deck (y = 0, facing -Y)
             for (int i = 0; i < flangeSegs; i++)
             {
                 float a1 = (float)i / flangeSegs * MathF.PI * 2f;
@@ -69,13 +77,43 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
                 Vector3 o0 = new Vector3(ca1 * flangeRadius, 0, sa1 * flangeRadius);
                 Vector3 o1 = new Vector3(ca2 * flangeRadius, 0, sa2 * flangeRadius);
-                Vector3 i0 = new Vector3(ca1 * (flangeRadius * 0.45f), 0, sa1 * (flangeRadius * 0.45f));
-                Vector3 i1 = new Vector3(ca2 * (flangeRadius * 0.45f), 0, sa2 * (flangeRadius * 0.45f));
+                Vector3 i0 = new Vector3(ca1 * shankRadius, 0, sa1 * shankRadius);
+                Vector3 i1 = new Vector3(ca2 * shankRadius, 0, sa2 * shankRadius);
 
-                MeshGeometryHelper.AddQuad(vertices, indices, o0, i0, i1, o1, Vector3.Down);
+                float u0 = (float)i / flangeSegs;
+                float u1 = (float)(i + 1) / flangeSegs;
+                Vector2 uv0 = new Vector2(0.5f + u0 * 0.48f, 0.12f);
+                Vector2 uv1 = new Vector2(0.5f + u0 * 0.48f, 0.02f);
+                Vector2 uv2 = new Vector2(0.5f + u1 * 0.48f, 0.02f);
+                Vector2 uv3 = new Vector2(0.5f + u1 * 0.48f, 0.12f);
+
+                MeshGeometryHelper.AddQuad(vertices, indices, o0, i0, i1, o1, Vector3.Down, uv0, uv1, uv2, uv3);
             }
 
-            // 2. 6-sided Hex Head Sides (y: flangeH to headHeight)
+            // 3. Upper Flange Deck (y = flangeH, facing +Y)
+            // Bridges outer flange rim into hex head base, eliminating see-through gaps
+            float deckInnerR = headRadius * 0.80f;
+            for (int i = 0; i < flangeSegs; i++)
+            {
+                float a1 = (float)i / flangeSegs * MathF.PI * 2f;
+                float a2 = (float)(i + 1) / flangeSegs * MathF.PI * 2f;
+                float ca1 = MathF.Cos(a1), sa1 = MathF.Sin(a1);
+                float ca2 = MathF.Cos(a2), sa2 = MathF.Sin(a2);
+
+                Vector3 o0 = new Vector3(ca1 * flangeRadius, flangeH, sa1 * flangeRadius);
+                Vector3 o1 = new Vector3(ca2 * flangeRadius, flangeH, sa2 * flangeRadius);
+                Vector3 i0 = new Vector3(ca1 * deckInnerR, flangeH, sa1 * deckInnerR);
+                Vector3 i1 = new Vector3(ca2 * deckInnerR, flangeH, sa2 * deckInnerR);
+
+                Vector2 uvO0 = GetTopPlanarUV(o0.X, o0.Z, flangeRadius);
+                Vector2 uvO1 = GetTopPlanarUV(o1.X, o1.Z, flangeRadius);
+                Vector2 uvI1 = GetTopPlanarUV(i1.X, i1.Z, flangeRadius);
+                Vector2 uvI0 = GetTopPlanarUV(i0.X, i0.Z, flangeRadius);
+
+                MeshGeometryHelper.AddQuad(vertices, indices, o0, o1, i1, i0, Vector3.Up, uvO0, uvO1, uvI1, uvI0);
+            }
+
+            // 4. 6-sided Hex Head Sides (y: flangeH to headHeight)
             int hexSegs = 6;
             for (int i = 0; i < hexSegs; i++)
             {
@@ -89,21 +127,28 @@ namespace BuildMechanic.Graphics.MeshBuilders
 
                 Vector3 n = Vector3.Normalize(Vector3.Cross(p3 - p0, p1 - p0));
 
-                MeshGeometryHelper.AddQuad(
-                    vertices, indices, p0, p1, p2, p3, n,
-                    new Vector2(0, 0.85f), new Vector2(1, 0.85f), new Vector2(1, 0.3f), new Vector2(0, 0.3f));
+                float uStart = 0.52f + i * (0.45f / hexSegs);
+                float uEnd = 0.52f + (i + 1) * (0.45f / hexSegs);
+
+                Vector2 uv0 = new Vector2(uStart, 0.85f);
+                Vector2 uv1 = new Vector2(uEnd, 0.85f);
+                Vector2 uv2 = new Vector2(uEnd, 0.15f);
+                Vector2 uv3 = new Vector2(uStart, 0.15f);
+
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, n, uv0, uv1, uv2, uv3);
             }
 
-            // 3. Top Face (+Y) with central socket bevel
+            // 5. Solid Flat Hex Crown (+Y) with stamped markings & socket
             ushort topCenterIdx = (ushort)vertices.Count;
-            vertices.Add(new VertexPositionNormalTexture(new Vector3(0, headHeight - 0.006f, 0), Vector3.Up, new Vector2(0.5f, 0.5f)));
+            vertices.Add(new VertexPositionNormalTexture(
+                new Vector3(0, headHeight, 0), Vector3.Up, new Vector2(0.25f, 0.5f)));
 
             for (int i = 0; i <= hexSegs; i++)
             {
                 float a = (float)i / hexSegs * MathF.PI * 2f;
                 float x = MathF.Cos(a) * headRadius;
                 float z = MathF.Sin(a) * headRadius;
-                Vector2 uv = new Vector2(x / flangeRadius * 0.45f + 0.5f, z / flangeRadius * 0.45f + 0.5f);
+                Vector2 uv = GetTopPlanarUV(x, z, flangeRadius);
                 vertices.Add(new VertexPositionNormalTexture(new Vector3(x, headHeight, z), Vector3.Up, uv));
             }
 
@@ -113,6 +158,13 @@ namespace BuildMechanic.Graphics.MeshBuilders
             }
 
             return BuildMesh(device, vertices, indices);
+        }
+
+        private static Vector2 GetTopPlanarUV(float x, float z, float flangeRadius)
+        {
+            return new Vector2(
+                (x / (2f * flangeRadius) + 0.5f) * 0.5f,
+                z / (2f * flangeRadius) + 0.5f);
         }
 
         private static SimpleMesh CreateThreadedShankMesh(GraphicsDevice device, float radius, float length)
