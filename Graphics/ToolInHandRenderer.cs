@@ -14,21 +14,22 @@ namespace BuildMechanic.Graphics
             SimpleMesh socketMesh, Texture2D metalTex, Texture2D gripTex,
             ToolManager tools, Vector3 hit, float recoil, float spinAngle)
         {
-            Vector3 bitPos = hit + new Vector3(0, 0, 0.04f + recoil);
+            Vector3 socketTipPos = hit + new Vector3(0, 0, recoil);
             Vector3 collarPos = hit + new Vector3(0, 0, 0.09f + recoil);
             Vector3 bodyPos = hit + new Vector3(0, 0, 0.17f + recoil);
             Vector3 gripPos = bodyPos + new Vector3(0, -0.13f, 0.04f);
             Vector3 battPos = gripPos + new Vector3(0, -0.09f, -0.02f);
 
-            // Chrome impact socket sleeve with rotation
+            // Chrome impact socket sleeve with dead-center spindle axis rotation
             eff.Texture = metalTex;
             eff.DiffuseColor = new Vector3(0.88f, 0.90f, 0.96f);
-            eff.World = Matrix.CreateRotationZ(spinAngle) * Matrix.CreateRotationX(1.57f) * Matrix.CreateTranslation(bitPos);
+            eff.World = Matrix.CreateRotationY(spinAngle) * Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateTranslation(socketTipPos);
             socketMesh.Draw(dev, eff);
 
-            // Machined aluminum anvil collar
+            // Machined aluminum anvil collar aligned along spindle axis
             eff.DiffuseColor = new Vector3(0.72f, 0.75f, 0.80f);
-            DrawCylinder(eff, cyl, dev, collarPos, 0.038f, 0.05f);
+            eff.World = Matrix.CreateScale(0.076f, 0.05f, 0.076f) * Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateTranslation(collarPos);
+            cyl.Draw(dev, eff);
 
             // High-intensity LED work light
             eff.DiffuseColor = tools.IsOperating ? new Vector3(2.5f, 2.5f, 2.8f) : new Vector3(0.7f, 0.7f, 0.8f);

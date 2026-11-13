@@ -13,6 +13,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
             var indices = new List<ushort>();
             int segs = 16;
 
+            // 1. Outer Cylinder Wall (y: 0 to length)
             for (int i = 0; i <= segs; i++)
             {
                 float a = (float)i / segs * MathF.PI * 2f;
@@ -30,7 +31,7 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 MeshGeometryHelper.AddCylinderWall(indices, b);
             }
 
-            // Top drive cap (y = length)
+            // 2. Rear Anvil Drive Cap (y = length, facing +Y)
             ushort topCenter = (ushort)vertices.Count;
             vertices.Add(new VertexPositionNormalTexture(new Vector3(0, length, 0), Vector3.Up, new Vector2(0.5f, 0.5f)));
             for (int i = 0; i <= segs; i++)
@@ -43,17 +44,49 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 MeshGeometryHelper.AddTopCapTri(indices, topCenter, (ushort)i);
             }
 
-            // Bottom drive rim (y = 0)
-            ushort botCenter = (ushort)vertices.Count;
-            vertices.Add(new VertexPositionNormalTexture(Vector3.Zero, Vector3.Down, new Vector2(0.5f, 0.5f)));
-            for (int i = 0; i <= segs; i++)
-            {
-                float a = (float)i / segs * MathF.PI * 2f;
-                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * radius, 0, MathF.Sin(a) * radius), Vector3.Down, Vector2.Zero));
-            }
+            // 3. Front Socket Mouth Beveled Lip (y = 0, facing -Y)
+            float mouthR = radius * 0.65f;
             for (int i = 0; i < segs; i++)
             {
-                MeshGeometryHelper.AddBottomCapTri(indices, botCenter, (ushort)i);
+                float a1 = (float)i / segs * MathF.PI * 2f;
+                float a2 = (float)(i + 1) / segs * MathF.PI * 2f;
+                Vector3 o0 = new Vector3(MathF.Cos(a1) * radius, 0, MathF.Sin(a1) * radius);
+                Vector3 o1 = new Vector3(MathF.Cos(a2) * radius, 0, MathF.Sin(a2) * radius);
+                Vector3 i0 = new Vector3(MathF.Cos(a1) * mouthR, 0, MathF.Sin(a1) * mouthR);
+                Vector3 i1 = new Vector3(MathF.Cos(a2) * mouthR, 0, MathF.Sin(a2) * mouthR);
+                MeshGeometryHelper.AddQuad(vertices, indices, o0, i0, i1, o1, Vector3.Down);
+            }
+
+            // 4. Recessed 6-Point Hex Socket Cavity (y: 0 to recessDepth)
+            float recessDepth = 0.018f;
+            int hexSegs = 6;
+            for (int i = 0; i < hexSegs; i++)
+            {
+                float a1 = (float)i / hexSegs * MathF.PI * 2f;
+                float a2 = (float)(i + 1) / hexSegs * MathF.PI * 2f;
+
+                Vector3 p0 = new Vector3(MathF.Cos(a1) * mouthR, 0, MathF.Sin(a1) * mouthR);
+                Vector3 p1 = new Vector3(MathF.Cos(a2) * mouthR, 0, MathF.Sin(a2) * mouthR);
+                Vector3 p2 = new Vector3(MathF.Cos(a2) * mouthR, recessDepth, MathF.Sin(a2) * mouthR);
+                Vector3 p3 = new Vector3(MathF.Cos(a1) * mouthR, recessDepth, MathF.Sin(a1) * mouthR);
+
+                Vector3 mid = (p0 + p1) * 0.5f;
+                Vector3 nInward = Vector3.Normalize(new Vector3(-mid.X, 0, -mid.Z));
+
+                MeshGeometryHelper.AddQuad(vertices, indices, p0, p1, p2, p3, nInward);
+            }
+
+            // 5. Hex Cavity Inner Floor (y = recessDepth, facing -Y towards mouth)
+            ushort floorCenter = (ushort)vertices.Count;
+            vertices.Add(new VertexPositionNormalTexture(new Vector3(0, recessDepth, 0), Vector3.Down, new Vector2(0.5f, 0.5f)));
+            for (int i = 0; i <= hexSegs; i++)
+            {
+                float a = (float)i / hexSegs * MathF.PI * 2f;
+                vertices.Add(new VertexPositionNormalTexture(new Vector3(MathF.Cos(a) * mouthR, recessDepth, MathF.Sin(a) * mouthR), Vector3.Down, Vector2.Zero));
+            }
+            for (int i = 0; i < hexSegs; i++)
+            {
+                MeshGeometryHelper.AddBottomCapTri(indices, floorCenter, (ushort)i);
             }
 
             return BuildMesh(device, vertices, indices);
