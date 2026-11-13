@@ -138,5 +138,52 @@ namespace BuildMechanic.Audio
 
             return SoundGenerator.CreateWav(buffer);
         }
+
+        public static byte[] GenerateGrinderLoaded(float duration = 1.0f)
+        {
+            int totalSamples = (int)(SampleRate * duration);
+            float[] buffer = new float[totalSamples];
+            var rng = new Random(666);
+
+            for (int i = 0; i < totalSamples; i++)
+            {
+                float t = (float)i / SampleRate;
+
+                // Bogged down motor tone under heavy steel friction load (~280 Hz)
+                float motor = MathF.Sin(2.0f * MathF.PI * 280.0f * t) * 0.35f +
+                              MathF.Sin(2.0f * MathF.PI * 560.0f * t) * 0.20f;
+
+                // High-frequency abrasive grinding grit noise
+                float grit = (float)(rng.NextDouble() * 2.0 - 1.0) * 0.35f;
+
+                buffer[i] = (motor + grit) * 0.75f;
+            }
+
+            return SoundGenerator.CreateWav(buffer);
+        }
+
+        public static byte[] GenerateWelderArcStrike(float duration = 0.8f)
+        {
+            int totalSamples = (int)(SampleRate * duration);
+            float[] buffer = new float[totalSamples];
+            var rng = new Random(777);
+
+            for (int i = 0; i < totalSamples; i++)
+            {
+                float t = (float)i / SampleRate;
+
+                // Initial HF spark pop in first 40ms
+                float pop = t < 0.04f ? MathF.Sin(2.0f * MathF.PI * 1800.0f * t) * MathF.Exp(-t * 80.0f) * 0.8f : 0f;
+
+                // Rectified 120 Hz plasma arc buzz with randomized sizzle
+                float buzz = MathF.Sin(2.0f * MathF.PI * 120.0f * t) * 0.4f +
+                             MathF.Sin(2.0f * MathF.PI * 240.0f * t) * 0.25f;
+                float sizzle = (float)(rng.NextDouble() * 2.0 - 1.0) * 0.25f;
+
+                buffer[i] = (pop + buzz + sizzle) * 0.7f;
+            }
+
+            return SoundGenerator.CreateWav(buffer);
+        }
     }
 }

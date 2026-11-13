@@ -29,19 +29,24 @@ namespace BuildMechanic.VFX
 
         public void Emit(Vector3 origin, Vector3 direction, int count = 4)
         {
+            EmitGrindingStream(origin, direction, count);
+        }
+
+        public void EmitGrindingStream(Vector3 origin, Vector3 direction, int count = 6)
+        {
             for (int i = 0; i < count; i++)
             {
-                if (_particles.Count >= 400) break;
+                if (_particles.Count >= MaxParticles) break;
 
-                // Random cone spread
+                // Tangential grinding abrasive stream spread
                 Vector3 spread = new Vector3(
-                    ((float)_rng.NextDouble() - 0.5f) * 0.8f,
-                    ((float)_rng.NextDouble() - 0.5f) * 0.6f + 0.4f,
-                    ((float)_rng.NextDouble() - 0.5f) * 0.8f
+                    ((float)_rng.NextDouble() - 0.5f) * 0.7f,
+                    ((float)_rng.NextDouble() - 0.5f) * 0.5f + 0.3f,
+                    ((float)_rng.NextDouble() - 0.5f) * 0.7f
                 );
 
-                Vector3 vel = (direction + spread) * ((float)_rng.NextDouble() * 3.5f + 2.0f);
-                float maxLife = (float)_rng.NextDouble() * 0.35f + 0.15f;
+                Vector3 vel = (direction + spread) * ((float)_rng.NextDouble() * 4.2f + 2.5f);
+                float maxLife = (float)_rng.NextDouble() * 0.40f + 0.18f;
 
                 _particles.Add(new SparkParticle
                 {
@@ -49,7 +54,32 @@ namespace BuildMechanic.VFX
                     Velocity = vel,
                     Life = maxLife,
                     MaxLife = maxLife,
-                    Size = (float)_rng.NextDouble() * 0.035f + 0.02f
+                    Size = (float)_rng.NextDouble() * 0.032f + 0.018f
+                });
+            }
+        }
+
+        public void EmitWeldingSpatter(Vector3 origin, int count = 2)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (_particles.Count >= MaxParticles) break;
+
+                // High-angle globular molten spatter
+                Vector3 vel = new Vector3(
+                    ((float)_rng.NextDouble() - 0.5f) * 1.8f,
+                    (float)_rng.NextDouble() * 2.2f + 1.0f,
+                    ((float)_rng.NextDouble() - 0.5f) * 1.8f
+                );
+                float maxLife = (float)_rng.NextDouble() * 0.55f + 0.25f;
+
+                _particles.Add(new SparkParticle
+                {
+                    Position = origin,
+                    Velocity = vel,
+                    Life = maxLife,
+                    MaxLife = maxLife,
+                    Size = (float)_rng.NextDouble() * 0.045f + 0.025f
                 });
             }
         }

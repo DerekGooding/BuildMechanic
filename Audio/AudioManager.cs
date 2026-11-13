@@ -22,11 +22,15 @@ namespace BuildMechanic.Audio
         private SoundEffect _reactorSpoolSfx;
         private SoundEffect _klaxonSfx;
         private SoundEffect _paintSpraySfx;
+        private SoundEffect _hvacSfx;
+        private SoundEffect _craneEchoSfx;
+        private SoundEffect _purgeHissSfx;
 
         // Loop instances for sustained tool interactions
         private SoundEffectInstance _driverLoopInstance;
         private SoundEffectInstance _grinderLoopInstance;
         private SoundEffectInstance _welderLoopInstance;
+        private SoundEffectInstance _hvacLoopInstance;
 
         public float MasterVolume { get; set; } = 0.85f;
 
@@ -55,8 +59,19 @@ namespace BuildMechanic.Audio
                 _reactorSpoolSfx = LoadFromBytes(WorkshopSounds.GenerateReactorSpool(1.5f));
                 _klaxonSfx = LoadFromBytes(WorkshopSounds.GenerateKlaxon(0.75f));
                 _paintSpraySfx = LoadFromBytes(WorkshopSounds.GeneratePaintSpray(0.8f));
+                _hvacSfx = LoadFromBytes(AmbientSoundGenerator.GenerateHangarHVAC(2.5f));
+                _craneEchoSfx = LoadFromBytes(AmbientSoundGenerator.GenerateCraneEcho(1.2f));
+                _purgeHissSfx = LoadFromBytes(AmbientSoundGenerator.GenerateArgonPurgeHiss(0.5f));
 
                 // Initialize loopers
+                if (_hvacSfx != null)
+                {
+                    _hvacLoopInstance = _hvacSfx.CreateInstance();
+                    _hvacLoopInstance.IsLooped = true;
+                    _hvacLoopInstance.Volume = MasterVolume * 0.35f;
+                    _hvacLoopInstance.Play();
+                }
+
                 if (_driverRunSfx != null)
                 {
                     _driverLoopInstance = _driverRunSfx.CreateInstance();
@@ -191,11 +206,22 @@ namespace BuildMechanic.Audio
             _paintSpraySfx?.Play(MasterVolume * 0.85f, 0f, 0f);
         }
 
+        public void PlayPurgeHiss()
+        {
+            _purgeHissSfx?.Play(MasterVolume * 0.65f, 0f, 0f);
+        }
+
+        public void PlayCraneEcho()
+        {
+            _craneEchoSfx?.Play(MasterVolume * 0.50f, 0f, 0f);
+        }
+
         public void StopAllLoops()
         {
             _driverLoopInstance?.Stop();
             _grinderLoopInstance?.Stop();
             _welderLoopInstance?.Stop();
+            _hvacLoopInstance?.Stop();
         }
 
         public void Dispose()
@@ -204,6 +230,7 @@ namespace BuildMechanic.Audio
             _driverLoopInstance?.Dispose();
             _grinderLoopInstance?.Dispose();
             _welderLoopInstance?.Dispose();
+            _hvacLoopInstance?.Dispose();
 
             _driverRunSfx?.Dispose();
             _driverTorqueSfx?.Dispose();
@@ -219,6 +246,9 @@ namespace BuildMechanic.Audio
             _reactorSpoolSfx?.Dispose();
             _klaxonSfx?.Dispose();
             _paintSpraySfx?.Dispose();
+            _hvacSfx?.Dispose();
+            _craneEchoSfx?.Dispose();
+            _purgeHissSfx?.Dispose();
         }
     }
 }

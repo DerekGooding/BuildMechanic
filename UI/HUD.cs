@@ -39,14 +39,14 @@ namespace BuildMechanic.UI
             int sh = viewport.Height;
             Point mousePos = Mouse.GetState().Position;
 
-            DrawCrosshair(spriteBatch, mousePos.X, mousePos.Y, toolManager);
+            HUDTargetTelemetry.DrawHolographicReticle(spriteBatch, _pixel, _font, mousePos.X, mousePos.Y, toolManager);
 
             if (toolManager.ActiveTool == ToolType.Scanner)
                 DrawARScannerTags(spriteBatch, viewport, chassis, camera);
 
             DrawTopStatusBar(spriteBatch, sw, contractManager);
             DrawContractTracker(spriteBatch, contractManager, chassis);
-            DrawTargetCard(spriteBatch, sw - 390, 48, toolManager);
+            HUDTargetTelemetry.DrawTargetCard(spriteBatch, _pixel, _font, sw - 400, 48, toolManager);
             DrawToolHotbar(spriteBatch, sw, sh, toolManager);
             DrawControlsLegend(spriteBatch, sw - 290, sh - 130);
 
@@ -60,22 +60,6 @@ namespace BuildMechanic.UI
                 DrawCompletionModal(spriteBatch, sw, sh, contractManager);
 
             spriteBatch.End();
-        }
-
-        private void DrawCrosshair(SpriteBatch sb, int cx, int cy, ToolManager tools)
-        {
-            Color reticleColor = tools.HoveredBolt != null ? Color.Gold :
-                                (tools.HoveredCrack != null ? Color.OrangeRed :
-                                (tools.HoveredHydraulic != null ? Color.DeepSkyBlue :
-                                (tools.HoveredRelay != null ? Color.Magenta :
-                                (tools.HoveredPlate != null ? Color.Cyan : Color.White * 0.75f))));
-
-            int len = 8, gap = 4, thick = 2;
-            sb.Draw(_pixel, new Rectangle(cx - gap - len, cy - thick / 2, len, thick), reticleColor);
-            sb.Draw(_pixel, new Rectangle(cx + gap, cy - thick / 2, len, thick), reticleColor);
-            sb.Draw(_pixel, new Rectangle(cx - thick / 2, cy - gap - len, thick, len), reticleColor);
-            sb.Draw(_pixel, new Rectangle(cx - thick / 2, cy + gap, thick, len), reticleColor);
-            sb.Draw(_pixel, new Rectangle(cx - 1, cy - 1, 2, 2), reticleColor);
         }
 
         private void DrawContractTracker(SpriteBatch sb, ContractManager contractManager, MechChassis chassis)
@@ -148,63 +132,6 @@ namespace BuildMechanic.UI
                 int torqued = plate.Bolts.Count(b => b.IsTorqued);
                 _font.DrawString(sb, $"{integ} | {torqued}/{plate.Bolts.Count} BOLTS", new Vector2(tx + 8, ty + 24), tagColor, 1.05f);
             }
-        }
-
-        private void DrawTargetCard(SpriteBatch sb, int x, int y, ToolManager tools)
-        {
-            int w = 370;
-            if (tools.HoveredPlate == null && tools.HoveredBolt == null && tools.HoveredCrack == null &&
-                tools.HoveredHydraulic == null && tools.HoveredRelay == null) return;
-
-            int h = 145;
-            sb.Draw(_pixel, new Rectangle(x, y, w, h), new Color(20, 22, 28, 235));
-            sb.Draw(_pixel, new Rectangle(x, y, 4, h), Color.Yellow);
-
-            if (tools.HoveredHydraulic != null)
-            {
-                var hyl = tools.HoveredHydraulic;
-                _font.DrawString(sb, "HYDRAULIC ACTUATOR", new Vector2(x + 14, y + 12), Color.DeepSkyBlue, 1.6f);
-                _font.DrawString(sb, $"PRESSURE: {(int)hyl.CurrentPressure} / {(int)hyl.TargetPressure} BAR", new Vector2(x + 14, y + 34), hyl.IsNominal ? Color.LimeGreen : Color.OrangeRed, 1.3f);
-                string status = hyl.HasAirPocket ? "AIR POCKET DETECTED [HOLD 7: BLEED]" : (hyl.Contamination > 15f ? "CONTAMINATED OIL [HOLD 7: FLUSH]" : "NOMINAL");
-                _font.DrawString(sb, $"STATUS: {status}", new Vector2(x + 14, y + 54), Color.Silver, 1.2f);
-                DrawProgressBar(sb, x + 14, y + 74, w - 28, 6, hyl.CurrentPressure / hyl.TargetPressure, Color.DeepSkyBlue);
-            }
-            else if (tools.HoveredRelay != null)
-            {
-                var r = tools.HoveredRelay;
-                _font.DrawString(sb, $"AVIONICS RELAY FUSE #{r.SlotIndex}", new Vector2(x + 14, y + 12), Color.Magenta, 1.6f);
-                string status = r.IsBlown ? "BLOWN [CLICK/RMB: REPLACE FUSE]" : (r.TestedWithProbe ? "CONTINUITY OK (0.5 OHM)" : "UNTESTED [CLICK: PROBE]");
-                _font.DrawString(sb, $"STATUS: {status}", new Vector2(x + 14, y + 36), r.IsBlown ? Color.Tomato : Color.LimeGreen, 1.25f);
-                _font.DrawString(sb, $"SLOT ID: {r.Id.ToUpper()}", new Vector2(x + 14, y + 58), Color.Silver, 1.2f);
-            }
-            else if (tools.HoveredBolt != null)
-            {
-                _font.DrawString(sb, "HEX FASTENER", new Vector2(x + 14, y + 12), Color.Gold, 1.7f);
-                string status = tools.HoveredBolt.IsTorqued ? "TORQUED (100%)" : (tools.HoveredBolt.IsRemoved ? "LOOSE / UNTHREADED (0%)" : $"THREADED ({(int)(tools.HoveredBolt.ThreadProgress * 100)}%)");
-                Color statusColor = tools.HoveredBolt.IsTorqued ? Color.LimeGreen : (tools.HoveredBolt.IsRemoved ? Color.OrangeRed : Color.Gold);
-                _font.DrawString(sb, $"STATUS: {status}", new Vector2(x + 14, y + 34), statusColor, 1.35f);
-                DrawProgressBar(sb, x + 14, y + 58, w - 28, 6, tools.HoveredBolt.ThreadProgress, statusColor);
-            }
-            else if (tools.HoveredCrack != null)
-            {
-                _font.DrawString(sb, "STRUCTURAL DEFECT", new Vector2(x + 14, y + 12), Color.OrangeRed, 1.7f);
-                _font.DrawString(sb, $"STAGE: {tools.HoveredCrack.Stage.ToString().ToUpper()}", new Vector2(x + 14, y + 34), Color.Yellow, 1.35f);
-                DrawProgressBar(sb, x + 14, y + 58, w - 28, 6, tools.HoveredCrack.StageProgress, Color.Orange);
-            }
-            else if (tools.HoveredPlate != null)
-            {
-                var p = tools.HoveredPlate;
-                _font.DrawString(sb, p.DisplayName.ToUpper(), new Vector2(x + 14, y + 12), Color.Cyan, 1.45f);
-                _font.DrawString(sb, $"INTEGRITY: {(int)p.Integrity}% | FASTENERS: {p.Bolts.Count(b => b.IsTorqued)}/{p.Bolts.Count}", new Vector2(x + 14, y + 34), Color.Silver, 1.25f);
-                DrawProgressBar(sb, x + 14, y + 58, w - 28, 6, p.Integrity / 100f, p.Integrity > 90 ? Color.LimeGreen : Color.OrangeRed);
-            }
-        }
-
-        private void DrawProgressBar(SpriteBatch sb, int x, int y, int width, int height, float progress, Color fill)
-        {
-            progress = Math.Clamp(progress, 0f, 1f);
-            sb.Draw(_pixel, new Rectangle(x, y, width, height), new Color(40, 45, 52));
-            sb.Draw(_pixel, new Rectangle(x, y, (int)(width * progress), height), fill);
         }
 
         private void DrawToolHotbar(SpriteBatch sb, int sw, int sh, ToolManager tools)

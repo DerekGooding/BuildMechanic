@@ -26,8 +26,7 @@ namespace BuildMechanic
         private UpgradeManager _upgradeManager;
         private ProvingGroundsManager _proving;
         private SceneRenderer _sceneRenderer;
-        private SparkParticleSystem _sparks;
-        private SmokeParticleSystem _smoke;
+        private VFXManager _vfx;
         private BasicEffect _particleEffect;
         private HUD _hud;
 
@@ -75,8 +74,7 @@ namespace BuildMechanic
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             _sceneRenderer = new SceneRenderer(GraphicsDevice);
-            _sparks = new SparkParticleSystem(_sceneRenderer.GlowTexture);
-            _smoke = new SmokeParticleSystem(_sceneRenderer.GlowTexture);
+            _vfx = new VFXManager(_sceneRenderer.GlowTexture);
 
             _particleEffect = new BasicEffect(GraphicsDevice)
             {
@@ -197,7 +195,7 @@ namespace BuildMechanic
             Ray mouseRay = _camera.GetMouseRay(mouse.Position, GraphicsDevice.Viewport);
 
             // Update tool system & interactions
-            _toolManager.Update(gameTime, mouseRay, _chassis, _sparks, _smoke);
+            _toolManager.Update(gameTime, mouseRay, _chassis, _vfx);
 
             // Update physics & chassis parts
             _chassis.Update(dt);
@@ -206,8 +204,7 @@ namespace BuildMechanic
             _proving.Update(dt, _chassis);
 
             // Update VFX
-            _sparks.Update(dt);
-            _smoke.Update(dt);
+            _vfx.Update(dt);
 
             // Update contracts & objectives
             _contractManager.Update(_chassis);
@@ -230,23 +227,15 @@ namespace BuildMechanic
                 _proving.ServoSineOffset
             );
 
-            // 2. Draw 3D Sparks & Welding VFX
-            _sparks.Draw(
+            // 2. Draw 3D VFX (Sparks, Smoke, Fluids, Aerosols, Atmospheric Dust)
+            _vfx.Draw(
                 GraphicsDevice,
                 _particleEffect,
                 _camera.ViewMatrix,
                 _camera.ProjectionMatrix
             );
 
-            // 3. Draw 3D Smoke Particles
-            _smoke.Draw(
-                GraphicsDevice,
-                _particleEffect,
-                _camera.ViewMatrix,
-                _camera.ProjectionMatrix
-            );
-
-            // 4. Draw 2D Sci-Fi HUD Overlay
+            // 3. Draw 2D Sci-Fi HUD Overlay
             _hud.Draw(
                 _spriteBatch,
                 GraphicsDevice.Viewport,

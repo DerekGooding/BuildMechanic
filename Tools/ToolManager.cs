@@ -72,7 +72,15 @@ namespace BuildMechanic.Tools
             ActiveColorIndex = (ActiveColorIndex + 1) % ArmorDecal.PaintPalette.Length;
         }
 
-        public void Update(GameTime gameTime, Ray ray, MechChassis chassis, SparkParticleSystem sparks, SmokeParticleSystem smoke = null)
+        public void Update(GameTime gameTime, Ray ray, MechChassis chassis, VFXManager vfx)
+        {
+            Update(gameTime, ray, chassis, vfx?.Sparks, vfx?.Smoke, vfx?.Fluid, vfx?.Aerosol);
+        }
+
+        public void Update(
+            GameTime gameTime, Ray ray, MechChassis chassis,
+            SparkParticleSystem sparks, SmokeParticleSystem smoke = null,
+            FluidParticleSystem fluid = null, AerosolParticleSystem aerosol = null)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             KeyboardState kbd = Keyboard.GetState();
@@ -129,13 +137,16 @@ namespace BuildMechanic.Tools
             IsOperating = false;
             ArcFlickerIntensity = 0f;
 
-            ExecuteActiveTool(dt, isLeftMouseDown, justClicked, isRightClicked, sparks, smoke);
+            ExecuteActiveTool(dt, isLeftMouseDown, justClicked, isRightClicked, sparks, smoke, fluid, aerosol);
 
             _prevKbd = kbd;
             _prevMouse = mouse;
         }
 
-        private void ExecuteActiveTool(float dt, bool isLmb, bool justClicked, bool isRmb, SparkParticleSystem sparks, SmokeParticleSystem smoke)
+        private void ExecuteActiveTool(
+            float dt, bool isLmb, bool justClicked, bool isRmb,
+            SparkParticleSystem sparks, SmokeParticleSystem smoke,
+            FluidParticleSystem fluid, AerosolParticleSystem aerosol)
         {
             switch (ActiveTool)
             {
@@ -220,6 +231,7 @@ namespace BuildMechanic.Tools
                         IsOperating = true;
                         HoveredHydraulic.BleedAir(dt);
                         HoveredHydraulic.FlushFluid(dt);
+                        fluid?.Emit(HitPoint, Vector3.Down, new Color(0.95f, 0.65f, 0.15f, 0.85f), 2);
                         if (_rng.NextDouble() < 0.25) AudioManager.Instance?.PlayHydraulicHiss();
                     }
                     break;
@@ -228,7 +240,9 @@ namespace BuildMechanic.Tools
                     if ((isLmb || justClicked) && HoveredPlate != null)
                     {
                         IsOperating = true;
-                        HoveredPlate.BaseCoatingColor = ArmorDecal.PaintPalette[ActiveColorIndex];
+                        Color pCol = ArmorDecal.PaintPalette[ActiveColorIndex];
+                        HoveredPlate.BaseCoatingColor = pCol;
+                        aerosol?.Emit(HitPoint, Vector3.Forward, pCol, 3);
                         if (justClicked) AudioManager.Instance?.PlayPaintSpray();
                     }
                     break;
