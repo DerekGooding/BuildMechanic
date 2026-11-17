@@ -35,7 +35,7 @@ namespace BuildMechanic.Graphics
             _gaugeTex = ToolTextureGenerator.CreatePressureGaugeTexture(device, 128);
         }
 
-        public void DrawActiveTool(GraphicsDevice dev, BasicEffect eff, SimpleMesh box, SimpleMesh cyl, Texture2D chassisTex, ToolManager tools)
+        public void DrawActiveTool(GraphicsDevice dev, BasicEffect eff, SimpleMesh box, SimpleMesh cyl, Texture2D chassisTex, ToolManager tools, float dt = 0.016f)
         {
             if (_socketMesh == null) Initialize(dev);
             if (tools.ActiveTool == ToolType.Scanner) return;
@@ -46,17 +46,19 @@ namespace BuildMechanic.Graphics
             if (hit == Vector3.Zero) return;
 
             // Update procedural animation states
-            float dt = 0.016f; // Nominal frame time
+            float safeDt = Math.Clamp(dt, 0.001f, 0.05f);
             if (tools.IsOperating && tools.ActiveTool == ToolType.Welder)
-                _thermalGlow = Math.Min(1.0f, _thermalGlow + dt * 4f);
+                _thermalGlow = Math.Min(1.0f, _thermalGlow + safeDt * 4f);
             else
-                _thermalGlow = Math.Max(0.0f, _thermalGlow - dt * 0.8f);
+                _thermalGlow = Math.Max(0.0f, _thermalGlow - safeDt * 0.8f);
 
             if (tools.IsOperating && tools.ActiveTool == ToolType.ImpactDriver)
-                _socketSpin += dt * 35f;
+                _socketSpin += safeDt * 35f;
 
             if (tools.IsOperating && tools.ActiveTool == ToolType.AngleGrinder)
-                _grinderSpin += dt * 65f;
+                _grinderSpin += safeDt * 65f;
+
+            float pryAngle = MathF.Sin(tools.PryImpulse * MathF.PI) * 0.35f;
 
             float ms = DateTime.Now.Millisecond;
             float recoil = tools.IsOperating && tools.ActiveTool == ToolType.ImpactDriver
@@ -81,7 +83,7 @@ namespace BuildMechanic.Graphics
                     ToolInHandRenderer.DrawImpactDriver(dev, eff, box, cyl, _socketMesh, _metalTex, _gripTex, tools, hit, recoil, _socketSpin);
                     break;
                 case ToolType.PryBar:
-                    ToolInHandRenderer.DrawPryBar(dev, eff, box, _pryBarMesh, _metalTex, hit);
+                    ToolInHandRenderer.DrawPryBar(dev, eff, box, _pryBarMesh, _metalTex, hit, pryAngle);
                     break;
                 case ToolType.AngleGrinder:
                     ToolInHandRenderer.DrawAngleGrinder(dev, eff, box, cyl, _grinderDiscMesh, _metalTex, _gripTex, tools, hit, vibration, _grinderSpin);

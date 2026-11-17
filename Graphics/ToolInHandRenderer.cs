@@ -246,24 +246,28 @@ namespace BuildMechanic.Graphics
 
         public static void DrawPryBar(
             GraphicsDevice dev, BasicEffect eff, SimpleMesh box,
-            SimpleMesh pryBarMesh, Texture2D metalTex, Vector3 hit)
+            SimpleMesh pryBarMesh, Texture2D metalTex, Vector3 hit, float pryAngle = 0f)
         {
+            Vector3 fulcrum = hit + new Vector3(0.06f, 0.06f, 0.05f);
+            Matrix leverPivot = Matrix.CreateTranslation(-fulcrum) * Matrix.CreateRotationX(-pryAngle) * Matrix.CreateTranslation(fulcrum);
+
             Vector3 bladePos = hit + new Vector3(0.03f, 0.03f, 0.02f);
-            Vector3 rockerPos = hit + new Vector3(0.06f, 0.06f, 0.05f);
             Vector3 handlePos = hit + new Vector3(0.16f, 0.16f, 0.16f);
 
             // Chisel ground wedge blade
             eff.Texture = metalTex;
             eff.DiffuseColor = new Vector3(0.85f, 0.88f, 0.92f);
-            DrawBox(eff, box, dev, bladePos, new Vector3(0.035f, 0.07f, 0.015f));
+            eff.World = Matrix.CreateScale(0.035f, 0.07f, 0.015f) * Matrix.CreateTranslation(bladePos) * leverPivot;
+            box.Draw(dev, eff);
 
             // Curved rocker fulcrum heel
             eff.DiffuseColor = new Vector3(0.30f, 0.32f, 0.36f);
-            DrawBox(eff, box, dev, rockerPos, new Vector3(0.045f, 0.07f, 0.045f));
+            eff.World = Matrix.CreateScale(0.045f, 0.07f, 0.045f) * Matrix.CreateTranslation(fulcrum) * leverPivot;
+            box.Draw(dev, eff);
 
             // Cobalt blue forged hex alloy shaft
             eff.DiffuseColor = new Vector3(0.22f, 0.42f, 0.85f);
-            eff.World = Matrix.CreateRotationX(0.78f) * Matrix.CreateRotationY(0.78f) * Matrix.CreateTranslation(handlePos);
+            eff.World = Matrix.CreateRotationX(0.78f) * Matrix.CreateRotationY(0.78f) * Matrix.CreateTranslation(handlePos) * leverPivot;
             pryBarMesh.Draw(dev, eff);
         }
 

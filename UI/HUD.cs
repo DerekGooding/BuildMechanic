@@ -39,14 +39,18 @@ namespace BuildMechanic.UI
             int sh = viewport.Height;
             Point mousePos = Mouse.GetState().Position;
 
-            HUDTargetTelemetry.DrawHolographicReticle(spriteBatch, _pixel, _font, mousePos.X, mousePos.Y, toolManager);
+            if (!toolManager.IsShopOpen)
+            {
+                HUDTargetTelemetry.DrawHolographicReticle(spriteBatch, _pixel, _font, mousePos.X, mousePos.Y, toolManager);
 
-            if (toolManager.ActiveTool == ToolType.Scanner)
-                DrawARScannerTags(spriteBatch, viewport, chassis, camera);
+                if (toolManager.ActiveTool == ToolType.Scanner)
+                    DrawARScannerTags(spriteBatch, viewport, chassis, camera);
+            }
 
             DrawTopStatusBar(spriteBatch, sw, contractManager);
             DrawContractTracker(spriteBatch, contractManager, chassis);
-            HUDTargetTelemetry.DrawTargetCard(spriteBatch, _pixel, _font, sw - 400, 48, toolManager);
+            if (!toolManager.IsShopOpen)
+                HUDTargetTelemetry.DrawTargetCard(spriteBatch, _pixel, _font, sw - 400, 48, toolManager);
             DrawToolHotbar(spriteBatch, sw, sh, toolManager);
             DrawControlsLegend(spriteBatch, sw - 290, sh - 130);
 
@@ -130,7 +134,9 @@ namespace BuildMechanic.UI
                 _font.DrawString(sb, plate.DisplayName.ToUpper(), new Vector2(tx + 8, ty + 6), Color.White, 1.15f);
                 string integ = damaged ? $"INTEG: {(int)plate.Integrity}% [DMG]" : "100% OK";
                 int torqued = plate.Bolts.Count(b => b.IsTorqued);
-                _font.DrawString(sb, $"{integ} | {torqued}/{plate.Bolts.Count} BOLTS", new Vector2(tx + 8, ty + 24), tagColor, 1.05f);
+                string stateBadge = plate.State == PlateMountState.Detached ? "[BENCH]" :
+                    (plate.CanDetach ? "[PRY]" : $"{torqued}/{plate.Bolts.Count}B");
+                _font.DrawString(sb, $"{integ} | {stateBadge}", new Vector2(tx + 8, ty + 24), tagColor, 1.05f);
             }
         }
 

@@ -58,13 +58,15 @@ namespace BuildMechanic.Graphics.Renderers
                             _ => new Color(185, 195, 205)
                         };
 
-                        float thickness = crack.Stage == CrackStage.WeldedBead ? 0.038f : 0.024f;
-                        if (tools.HoveredCrack == crack && !tools.IsOperating) segColor = Color.Yellow;
+                        bool useWeldMesh = ShouldUseWeldMesh(crack.Stage, progress, segEnd);
+                        float thickness = useWeldMesh ? 0.038f : 0.024f;
+                        if (tools.HoveredCrack == crack && !tools.IsOperating)
+                            segColor = Color.Lerp(segColor, Color.Yellow, 0.42f);
 
                         effect.DiffuseColor = segColor.ToVector3();
                         effect.World = Matrix.CreateScale(thickness, thickness, len) * Matrix.CreateWorld(mid, dir, Vector3.Up);
 
-                        if (crack.Stage == CrackStage.WeldedBead && progress >= segEnd)
+                        if (useWeldMesh)
                         {
                             _weldMesh.Draw(device, effect);
                         }
@@ -75,6 +77,13 @@ namespace BuildMechanic.Graphics.Renderers
                     }
                 }
             }
+        }
+
+        public static bool ShouldUseWeldMesh(CrackStage stage, float stageProgress, float segEnd)
+        {
+            if (stage == CrackStage.PreppedGroove) return stageProgress >= segEnd;
+            if (stage == CrackStage.WeldedBead) return stageProgress < segEnd;
+            return false;
         }
 
         public void Dispose()

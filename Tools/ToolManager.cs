@@ -44,6 +44,7 @@ namespace BuildMechanic.Tools
 
         public bool IsOperating { get; private set; }
         public float ArcFlickerIntensity { get; private set; }
+        public float PryImpulse { get; private set; }
 
         private readonly Random _rng = new Random();
         private KeyboardState _prevKbd;
@@ -145,6 +146,7 @@ namespace BuildMechanic.Tools
 
             IsOperating = false;
             ArcFlickerIntensity = 0f;
+            PryImpulse = Math.Max(0f, PryImpulse - dt * 4.5f);
 
             ExecuteActiveTool(dt, isLeftMouseDown, justClicked, isRightClicked, sparks, smoke, fluid, aerosol);
 
@@ -178,6 +180,7 @@ namespace BuildMechanic.Tools
                 case ToolType.PryBar:
                     if (justClicked && HoveredPlate != null)
                     {
+                        PryImpulse = 1.0f;
                         if (HoveredPlate.State == PlateMountState.Mounted && HoveredPlate.CanDetach)
                         {
                             HoveredPlate.ToggleMount();
@@ -277,6 +280,7 @@ namespace BuildMechanic.Tools
         {
             IsOperating = false;
             ArcFlickerIntensity = 0f;
+            PryImpulse = 0f;
             AudioManager.Instance?.StopAllLoops();
         }
     }

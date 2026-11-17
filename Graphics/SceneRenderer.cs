@@ -63,7 +63,7 @@ namespace BuildMechanic.Graphics
             _toolRenderer.Initialize(device);
         }
 
-        public void DrawScene(Matrix view, Matrix proj, MechChassis chassis, ToolManager tools, float servoOffset = 0f)
+        public void DrawScene(Matrix view, Matrix proj, MechChassis chassis, ToolManager tools, float servoOffset = 0f, float dt = 0.016f)
         {
             _device.DepthStencilState = DepthStencilState.Default;
             _device.RasterizerState = RasterizerState.CullCounterClockwise;
@@ -94,7 +94,7 @@ namespace BuildMechanic.Graphics
             _crackRenderer.Draw(_device, _effect, chassis, tools);
 
             // 8. 3D Shop Tools (Impact Driver, Grinder, Welder, Multimeter, etc.)
-            _toolRenderer.DrawActiveTool(_device, _effect, _boxMesh, _cylinderMesh, _chassisTex, tools);
+            _toolRenderer.DrawActiveTool(_device, _effect, _boxMesh, _cylinderMesh, _chassisTex, tools, dt);
         }
 
         public void Dispose()

@@ -1,5 +1,7 @@
 using Microsoft.Xna.Framework;
+using BuildMechanic.Graphics.Renderers;
 using BuildMechanic.Simulation;
+using BuildMechanic.UI;
 using Xunit;
 
 namespace BuildMechanic.Tests.Simulation
@@ -120,6 +122,54 @@ namespace BuildMechanic.Tests.Simulation
 
             bolt.ThreadProgress = 0.05f;
             Assert.True(bolt.IsRemoved);
+        }
+
+        [Fact]
+        public void ShoulderAndLegPlates_BoltsAndCracks_ConformToContouredSurface()
+        {
+            var chassis = new MechChassis();
+            chassis.Initialize();
+            chassis.ConfigureDamage(new[] { "plate_shoulder_left", "plate_leg_left" });
+
+            // Shoulder top bolts (+Y) must sit further forward (+Z) than bottom bolts (-Y)
+            var shoulder = chassis.LeftShoulderPlate;
+            var topBolt = shoulder.Bolts[0];
+            var botBolt = shoulder.Bolts[2];
+            Assert.True(topBolt.LocalPosition.Y > botBolt.LocalPosition.Y);
+            Assert.True(topBolt.LocalPosition.Z > botBolt.LocalPosition.Z);
+            Assert.True(topBolt.Normal.Y < 0f);
+
+            // Leg crack center points near x=0 must sit proud of the 0.056m prow ridge
+            var leg = chassis.LeftLegPlate;
+            Assert.Single(leg.Cracks);
+            var midPoint = leg.Cracks[0].LocalPoints[2];
+            Assert.True(midPoint.Z > 0.052f);
+        }
+
+        [Fact]
+        public void HUDTargetTelemetry_GetPlateMountStatus_DistinguishesWorkbenchOccupied()
+        {
+            var plate = new ArmorPlate { DetachGuard = _ => false };
+            plate.Bolts.Add(new Bolt { ThreadProgress = 0.0f });
+
+            Assert.True(plate.AllBoltsRemoved);
+            Assert.False(plate.CanDetach);
+
+            string status = HUDTargetTelemetry.GetPlateMountStatus(plate, out Color col);
+            Assert.Contains("WORKBENCH OCCUPIED", status);
+            Assert.DoesNotContain("UNTHREAD 0", status);
+            Assert.Equal(Color.Orange, col);
+        }
+
+        [Fact]
+        public void CrackRenderer_ShouldUseWeldMesh_MatchesStageLifecycle()
+        {
+            Assert.False(CrackRenderer.ShouldUseWeldMesh(CrackStage.Fractured, 0.5f, 0.5f));
+            Assert.True(CrackRenderer.ShouldUseWeldMesh(CrackStage.PreppedGroove, 0.6f, 0.5f));
+            Assert.False(CrackRenderer.ShouldUseWeldMesh(CrackStage.PreppedGroove, 0.4f, 0.5f));
+            Assert.True(CrackRenderer.ShouldUseWeldMesh(CrackStage.WeldedBead, 0.2f, 0.5f));
+            Assert.False(CrackRenderer.ShouldUseWeldMesh(CrackStage.WeldedBead, 0.6f, 0.5f));
+            Assert.False(CrackRenderer.ShouldUseWeldMesh(CrackStage.FlushFinished, 1.0f, 0.5f));
         }
     }
 }

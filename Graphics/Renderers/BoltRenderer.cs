@@ -47,7 +47,15 @@ namespace BuildMechanic.Graphics.Renderers
                     }
 
                     effect.DiffuseColor = tint;
-                    Matrix boltRot = Matrix.CreateRotationY(bolt.SpinAngle) * Matrix.CreateRotationX(MathHelper.PiOver2) * plateRot;
+                    Matrix normalTilt = Matrix.Identity;
+                    Vector3 n = Vector3.Normalize(bolt.Normal);
+                    float dot = Math.Clamp(Vector3.Dot(Vector3.Backward, n), -1f, 1f);
+                    if (dot < 0.9999f && dot > -0.9999f)
+                    {
+                        Vector3 axis = Vector3.Normalize(Vector3.Cross(Vector3.Backward, n));
+                        normalTilt = Matrix.CreateFromAxisAngle(axis, MathF.Acos(dot));
+                    }
+                    Matrix boltRot = Matrix.CreateRotationY(bolt.SpinAngle) * Matrix.CreateRotationX(MathHelper.PiOver2) * normalTilt * plateRot;
                     effect.World = boltRot * Matrix.CreateTranslation(boltPos);
 
                     // 1. Draw Flanged Hex Head Crown & Socket

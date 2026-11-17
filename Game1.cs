@@ -91,105 +91,102 @@ namespace BuildMechanic
             var mouse = Mouse.GetState();
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-            if (kbd.IsKeyDown(Keys.Escape) && !_toolManager.IsShopOpen)
-                Exit();
-
-            // Cycle camera sectors (C key)
-            if (kbd.IsKeyDown(Keys.C) && _prevKeyboard.IsKeyUp(Keys.C))
+            if (kbd.IsKeyDown(Keys.Escape) && _prevKeyboard.IsKeyUp(Keys.Escape))
             {
-                _sectorIndex = (_sectorIndex + 1) % 5;
-                switch (_sectorIndex)
-                {
-                    case 0: // Torso
-                        _camera.FocusSector(new Vector3(0, 2.70f, 0.50f), 2.6f, 0.0f, 0.10f);
-                        break;
-                    case 1: // Shoulders
-                        _camera.FocusSector(new Vector3(0, 3.35f, 0.50f), 2.8f, 0.0f, 0.10f);
-                        break;
-                    case 2: // Legs
-                        _camera.FocusSector(new Vector3(0, 0.85f, 0.50f), 2.5f, 0.0f, 0.10f);
-                        break;
-                    case 3: // Left Workbench
-                        _camera.FocusSector(new Vector3(-1.80f, 2.10f, 1.20f), 2.1f, -0.22f, 0.12f);
-                        break;
-                    case 4: // Right Workbench
-                        _camera.FocusSector(new Vector3(1.80f, 2.10f, 1.20f), 2.1f, 0.22f, 0.12f);
-                        break;
-                }
+                if (_toolManager.IsShopOpen)
+                    _toolManager.IsShopOpen = false;
+                else
+                    Exit();
             }
 
-            // Smart camera focus hotkey (F key)
-            if (kbd.IsKeyDown(Keys.F) && _prevKeyboard.IsKeyUp(Keys.F))
+            if (!_toolManager.IsShopOpen)
             {
-                if (_toolManager.HoveredPlate != null)
+                // Cycle camera sectors (C key)
+                if (kbd.IsKeyDown(Keys.C) && _prevKeyboard.IsKeyUp(Keys.C))
                 {
-                    var p = _toolManager.HoveredPlate;
-                    Vector3 focusPoint = p.State == PlateMountState.Mounted ? p.MountedPosition : p.DetachedPosition;
-                    float yaw = focusPoint.X < -0.5f ? -0.22f : (focusPoint.X > 0.5f ? 0.22f : 0f);
-                    _camera.FocusSector(focusPoint, 2.1f, yaw, 0.10f);
-                }
-                else
-                {
-                    // Check if any plate is detached and focus on it
-                    ArmorPlate detached = null;
-                    foreach (var pl in _chassis.Plates)
+                    _sectorIndex = (_sectorIndex + 1) % 5;
+                    switch (_sectorIndex)
                     {
-                        if (pl.State == PlateMountState.Detached) { detached = pl; break; }
+                        case 0: // Torso
+                            _camera.FocusSector(new Vector3(0, 2.70f, 0.50f), 2.6f, 0.0f, 0.10f);
+                            break;
+                        case 1: // Shoulders
+                            _camera.FocusSector(new Vector3(0, 3.35f, 0.50f), 2.8f, 0.0f, 0.10f);
+                            break;
+                        case 2: // Legs
+                            _camera.FocusSector(new Vector3(0, 0.85f, 0.50f), 2.5f, 0.0f, 0.10f);
+                            break;
+                        case 3: // Left Workbench
+                            _camera.FocusSector(new Vector3(-1.80f, 2.10f, 1.20f), 2.1f, -0.22f, 0.12f);
+                            break;
+                        case 4: // Right Workbench
+                            _camera.FocusSector(new Vector3(1.80f, 2.10f, 1.20f), 2.1f, 0.22f, 0.12f);
+                            break;
                     }
+                }
 
-                    if (detached != null)
+                // Smart camera focus hotkey (F key)
+                if (kbd.IsKeyDown(Keys.F) && _prevKeyboard.IsKeyUp(Keys.F))
+                {
+                    if (_toolManager.HoveredPlate != null)
                     {
-                        float yaw = detached.DetachedPosition.X < 0 ? -0.22f : 0.22f;
-                        _camera.FocusSector(detached.DetachedPosition, 2.1f, yaw, 0.12f);
+                        var p = _toolManager.HoveredPlate;
+                        Vector3 focusPoint = p.State == PlateMountState.Mounted ? p.MountedPosition : p.DetachedPosition;
+                        float yaw = focusPoint.X < -0.5f ? -0.22f : (focusPoint.X > 0.5f ? 0.22f : 0f);
+                        _camera.FocusSector(focusPoint, 2.1f, yaw, 0.10f);
                     }
                     else
                     {
-                        // Focus on Torso Breastplate Workstation
-                        _camera.FocusSector(new Vector3(0, 2.70f, 0.50f), 2.5f, 0.0f, 0.10f);
-                    }
-                }
-            }
-
-            if (kbd.IsKeyDown(Keys.Space) && _prevKeyboard.IsKeyUp(Keys.Space))
-            {
-                // Reset to full hangar gantry overview
-                _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 4.5f, 0.0f, 0.15f);
-            }
-
-            // Trigger Proving Grounds live testing cycle (T key)
-            if (kbd.IsKeyDown(Keys.T) && _prevKeyboard.IsKeyUp(Keys.T))
-            {
-                _proving.TriggerTest(_chassis);
-            }
-
-            // Advance to next contract if complete and Enter pressed
-            if (_contractManager.IsFinished && kbd.IsKeyDown(Keys.Enter) && _prevKeyboard.IsKeyUp(Keys.Enter))
-            {
-                _proving.Reset();
-                _contractManager.AdvanceToNextContract(_chassis);
-            }
-
-            // Launch 3D Model Inspector & Diagnostics Library (L key)
-            if (kbd.IsKeyDown(Keys.L) && _prevKeyboard.IsKeyUp(Keys.L))
-            {
-                try
-                {
-                    string exePath = Environment.ProcessPath;
-                    if (!string.IsNullOrEmpty(exePath))
-                    {
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        ArmorPlate detached = null;
+                        foreach (var pl in _chassis.Plates)
                         {
-                            FileName = exePath,
-                            Arguments = "--model-viewer",
-                            UseShellExecute = true
-                        });
+                            if (pl.State == PlateMountState.Detached) { detached = pl; break; }
+                        }
+
+                        if (detached != null)
+                        {
+                            float yaw = detached.DetachedPosition.X < 0 ? -0.22f : 0.22f;
+                            _camera.FocusSector(detached.DetachedPosition, 2.1f, yaw, 0.12f);
+                        }
+                        else
+                        {
+                            _camera.FocusSector(new Vector3(0, 2.70f, 0.50f), 2.5f, 0.0f, 0.10f);
+                        }
                     }
                 }
-                catch { /* Ignore launch exception in headless or sandbox environments */ }
-            }
 
-            // Update camera
-            _camera.Update(gameTime, GraphicsDevice.Viewport);
+                if (kbd.IsKeyDown(Keys.Space) && _prevKeyboard.IsKeyUp(Keys.Space))
+                    _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 4.5f, 0.0f, 0.15f);
+
+                if (kbd.IsKeyDown(Keys.T) && _prevKeyboard.IsKeyUp(Keys.T))
+                    _proving.TriggerTest(_chassis);
+
+                if (_contractManager.IsFinished && kbd.IsKeyDown(Keys.Enter) && _prevKeyboard.IsKeyUp(Keys.Enter))
+                {
+                    _proving.Reset();
+                    _contractManager.AdvanceToNextContract(_chassis);
+                }
+
+                if (kbd.IsKeyDown(Keys.L) && _prevKeyboard.IsKeyUp(Keys.L))
+                {
+                    try
+                    {
+                        string exePath = Environment.ProcessPath;
+                        if (!string.IsNullOrEmpty(exePath))
+                        {
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                            {
+                                FileName = exePath,
+                                Arguments = "--model-viewer",
+                                UseShellExecute = true
+                            });
+                        }
+                    }
+                    catch { /* Ignore launch exception in headless or sandbox environments */ }
+                }
+
+                _camera.Update(gameTime, GraphicsDevice.Viewport);
+            }
 
             // Get 3D ray under mouse cursor
             Ray mouseRay = _camera.GetMouseRay(mouse.Position, GraphicsDevice.Viewport);
@@ -219,12 +216,14 @@ namespace BuildMechanic
             GraphicsDevice.Clear(new Color(22, 25, 30));
 
             // 1. Draw 3D Hangar, Mech Chassis, Armor Plates, Hex Bolts, Cracks, and Internals
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             _sceneRenderer.DrawScene(
                 _camera.ViewMatrix,
                 _camera.ProjectionMatrix,
                 _chassis,
                 _toolManager,
-                _proving.ServoSineOffset
+                _proving.ServoSineOffset,
+                dt
             );
 
             // 2. Draw 3D VFX (Sparks, Smoke, Fluids, Aerosols, Atmospheric Dust)

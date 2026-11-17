@@ -130,13 +130,53 @@ namespace BuildMechanic.Simulation
                 Dimensions = dims
             };
 
-            float bz = 0.041f;
-            plate.Bolts.Add(new Bolt { Id = $"{prefix}_1", LocalPosition = new Vector3(-bx, by, bz) });
-            plate.Bolts.Add(new Bolt { Id = $"{prefix}_2", LocalPosition = new Vector3(bx, by, bz) });
-            plate.Bolts.Add(new Bolt { Id = $"{prefix}_3", LocalPosition = new Vector3(-bx, -by, bz) });
-            plate.Bolts.Add(new Bolt { Id = $"{prefix}_4", LocalPosition = new Vector3(bx, -by, bz) });
+            (float x, float y)[] corners = { (-bx, by), (bx, by), (-bx, -by), (bx, -by) };
+            for (int i = 0; i < corners.Length; i++)
+            {
+                float surfZ = GetPlateSurfaceZ(id, dims, corners[i].x, corners[i].y, out Vector3 surfNormal);
+                plate.Bolts.Add(new Bolt
+                {
+                    Id = $"{prefix}_{i + 1}",
+                    LocalPosition = new Vector3(corners[i].x, corners[i].y, surfZ + 0.001f),
+                    Normal = surfNormal
+                });
+            }
 
             return plate;
+        }
+
+        public static float GetPlateSurfaceZ(string plateId, Vector3 dims, float x, float y, out Vector3 normal)
+        {
+            float hw = dims.X * 0.5f;
+            float hh = dims.Y * 0.5f;
+            float hz = dims.Z * 0.5f;
+
+            if (plateId.Contains("shoulder"))
+            {
+                float ty = Math.Clamp((y + hh) / (2f * hh), 0f, 1f);
+                normal = Vector3.Normalize(new Vector3(0f, -0.025f / dims.Y, 1f));
+                return MathHelper.Lerp(hz - 0.01f, hz + 0.015f, ty);
+            }
+
+            if (plateId.Contains("leg"))
+            {
+                float ty = Math.Clamp((y + hh) / (2f * hh), 0f, 1f);
+                float localHw = MathHelper.Lerp(hw * 0.85f, hw, ty);
+                float tx = Math.Clamp(Math.Abs(x) / localHw, 0f, 1f);
+                float slopeX = 0.016f / localHw;
+                normal = x >= 0f
+                    ? Vector3.Normalize(new Vector3(slopeX, 0f, 1f))
+                    : Vector3.Normalize(new Vector3(-slopeX, 0f, 1f));
+                return hz + 0.016f * (1f - tx);
+            }
+
+            // Torso faceted prow
+            float ihw = Math.Max(0.01f, hw - 0.04f);
+            float ihh = Math.Max(0.01f, hh - 0.04f);
+            float ptx = Math.Clamp(Math.Abs(x) / ihw, 0f, 1f);
+            float pty = Math.Clamp(Math.Abs(y) / ihh, 0f, 1f);
+            normal = Vector3.Backward;
+            return hz + 0.012f * (1f - Math.Max(ptx, pty));
         }
 
         public bool IsWorkbenchAvailable(ArmorPlate requestingPlate)
@@ -161,21 +201,29 @@ namespace BuildMechanic.Simulation
 
                 if (targetSet.Contains(plate.Id))
                 {
-                    float bz = 0.041f;
                     float hw = plate.Dimensions.X * 0.35f;
                     float hh = plate.Dimensions.Y * 0.35f;
+
+                    (float x, float y)[] pts =
+                    {
+                        (-hw, -hh * 0.8f),
+                        (-hw * 0.4f, -hh * 0.2f),
+                        (hw * 0.1f, hh * 0.2f),
+                        (hw * 0.5f, hh * 0.5f),
+                        (hw * 0.85f, hh * 0.9f)
+                    };
+
+                    var localPoints = new List<Vector3>(pts.Length);
+                    foreach (var pt in pts)
+                    {
+                        float surfZ = GetPlateSurfaceZ(plate.Id, plate.Dimensions, pt.x, pt.y, out _);
+                        localPoints.Add(new Vector3(pt.x, pt.y, surfZ + 0.002f));
+                    }
 
                     var crack = new CrackSegment
                     {
                         Id = $"crack_{plate.Id}_main",
-                        LocalPoints = new List<Vector3>
-                        {
-                            new Vector3(-hw, -hh * 0.8f, bz),
-                            new Vector3(-hw * 0.4f, -hh * 0.2f, bz),
-                            new Vector3(hw * 0.1f, hh * 0.2f, bz),
-                            new Vector3(hw * 0.5f, hh * 0.5f, bz),
-                            new Vector3(hw * 0.85f, hh * 0.9f, bz)
-                        }
+                        LocalPoints = localPoints
                     };
                     plate.Cracks.Add(crack);
                 }

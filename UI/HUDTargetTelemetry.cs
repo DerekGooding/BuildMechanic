@@ -155,33 +155,35 @@ namespace BuildMechanic.UI
             Color integCol = p.Integrity > 90 ? Color.LimeGreen : (p.Integrity > 50 ? Color.Gold : Color.OrangeRed);
             DrawGaugeBar(sb, pixel, x + 14, y + 62, w - 28, 8, p.Integrity / 100f, integCol);
 
-            string mountStatus;
-            Color mountCol;
+            string mountStatus = GetPlateMountStatus(p, out Color mountCol);
+            font.DrawString(sb, $"STATUS: {mountStatus}", new Vector2(x + 14, y + 78), mountCol, 1.15f);
+        }
+
+        public static string GetPlateMountStatus(ArmorPlate p, out Color mountCol)
+        {
             if (p.State == PlateMountState.Mounted)
             {
                 if (p.CanDetach)
                 {
-                    mountStatus = "BOLTS REMOVED -> READY TO PRY DETACH [CLICK 3: PRY BAR]";
                     mountCol = Color.Yellow;
+                    return "BOLTS REMOVED -> READY TO PRY DETACH [CLICK 3: PRY BAR]";
                 }
-                else
+                if (p.AllBoltsRemoved)
                 {
-                    int remaining = p.Bolts.Count(b => !b.IsRemoved);
-                    mountStatus = $"LOCKED ON CHASSIS -> UNTHREAD {remaining} BOLTS FIRST [2: DRIVER]";
-                    mountCol = Color.Tomato;
+                    mountCol = Color.Orange;
+                    return "WORKBENCH OCCUPIED -> REMOUNT EXISTING PLATE FIRST";
                 }
+                int remaining = p.Bolts.Count(b => !b.IsRemoved);
+                mountCol = Color.Tomato;
+                return $"LOCKED ON CHASSIS -> UNTHREAD {remaining} BOLTS FIRST [2: DRIVER]";
             }
-            else if (p.State == PlateMountState.Detached)
+            if (p.State == PlateMountState.Detached)
             {
-                mountStatus = "ON WORKBENCH RIG -> READY TO REMOUNT [CLICK 3: PRY BAR]";
                 mountCol = Color.Cyan;
+                return "ON WORKBENCH RIG -> READY TO REMOUNT [CLICK 3: PRY BAR]";
             }
-            else
-            {
-                mountStatus = "TRANSITIONING RIG...";
-                mountCol = Color.Gold;
-            }
-            font.DrawString(sb, $"STATUS: {mountStatus}", new Vector2(x + 14, y + 78), mountCol, 1.15f);
+            mountCol = Color.Gold;
+            return "TRANSITIONING RIG...";
         }
 
         private static void DrawGaugeBar(SpriteBatch sb, Texture2D pixel, int x, int y, int width, int height, float progress, Color fill)
