@@ -5,6 +5,7 @@ using BuildMechanic.Audio;
 using BuildMechanic.Gameplay;
 using BuildMechanic.Graphics;
 using BuildMechanic.Simulation;
+using BuildMechanic.UI;
 using BuildMechanic.VFX;
 
 namespace BuildMechanic.Tools
@@ -83,14 +84,18 @@ namespace BuildMechanic.Tools
         }
 
         public void Update(GameTime gameTime, Ray ray, MechChassis chassis, VFXManager vfx)
+            => Update(gameTime, ray, chassis, vfx, 1280, 720);
+
+        public void Update(GameTime gameTime, Ray ray, MechChassis chassis, VFXManager vfx, int sw, int sh)
         {
-            Update(gameTime, ray, chassis, vfx?.Sparks, vfx?.Smoke, vfx?.Fluid, vfx?.Aerosol);
+            Update(gameTime, ray, chassis, vfx?.Sparks, vfx?.Smoke, vfx?.Fluid, vfx?.Aerosol, sw, sh);
         }
 
         public void Update(
             GameTime gameTime, Ray ray, MechChassis chassis,
             SparkParticleSystem sparks, SmokeParticleSystem smoke = null,
-            FluidParticleSystem fluid = null, AerosolParticleSystem aerosol = null)
+            FluidParticleSystem fluid = null, AerosolParticleSystem aerosol = null,
+            int sw = 1280, int sh = 720)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             KeyboardState kbd = Keyboard.GetState();
@@ -105,7 +110,8 @@ namespace BuildMechanic.Tools
 
             if (IsShopOpen)
             {
-                HandleShopInput(kbd);
+                HUDShopView.HandleInput(kbd, _prevKbd, mouse, _prevMouse, sw, sh, out bool closeRequested);
+                if (closeRequested) IsShopOpen = false;
                 _prevKbd = kbd;
                 _prevMouse = mouse;
                 return;
@@ -172,7 +178,7 @@ namespace BuildMechanic.Tools
                         AudioManager.Instance?.PlayDriverLoop(true);
                         float speedMult = UpgradeManager.Instance?.GetDriverSpeed() ?? 1.0f;
                         float speed = ((DriverDir == DriverDirection.Forward) ? 1.4f : -1.4f) * speedMult;
-                        if (HoveredBolt.Drive(speed * dt) == 1) AudioManager.Instance?.PlayTorqueClick();
+                        if (HoveredBolt.Drive(speed * dt) != 0) AudioManager.Instance?.PlayTorqueClick();
                     }
                     else AudioManager.Instance?.PlayDriverLoop(false);
                     break;
@@ -185,6 +191,7 @@ namespace BuildMechanic.Tools
                         {
                             HoveredPlate.ToggleMount();
                             AudioManager.Instance?.PlayPlateDetach();
+                            AudioManager.Instance?.PlayCraneEcho();
                         }
                         else if (HoveredPlate.State == PlateMountState.Mounted && !HoveredPlate.CanDetach)
                         {
@@ -194,6 +201,7 @@ namespace BuildMechanic.Tools
                         {
                             HoveredPlate.ToggleMount();
                             AudioManager.Instance?.PlayPlateMount();
+                            AudioManager.Instance?.PlayCraneEcho();
                         }
                     }
                     break;
@@ -220,7 +228,11 @@ namespace BuildMechanic.Tools
                         sparks?.Emit(HitPoint, Vector3.Up, 1);
                         smoke?.Emit(HitPoint, 1);
                         float weldMult = UpgradeManager.Instance?.GetWelderSpeed() ?? 1.0f;
-                        if (HoveredCrack.ApplyWelding(dt * 0.35f * weldMult)) AudioManager.Instance?.PlayScannerPing();
+                        if (HoveredCrack.ApplyWelding(dt * 0.35f * weldMult))
+                        {
+                            AudioManager.Instance?.PlayScannerPing();
+                            AudioManager.Instance?.PlayPurgeHiss();
+                        }
                     }
                     else AudioManager.Instance?.PlayWelderLoop(false);
                     break;
@@ -265,23 +277,12 @@ namespace BuildMechanic.Tools
             }
         }
 
-        private void HandleShopInput(KeyboardState kbd)
-        {
-            if (kbd.IsKeyDown(Keys.Escape) && _prevKbd.IsKeyUp(Keys.Escape)) IsShopOpen = false;
-            if (kbd.IsKeyDown(Keys.F1) && _prevKbd.IsKeyUp(Keys.F1) && UpgradeManager.Instance != null && UpgradeManager.Instance.TryUpgradeDriver())
-                AudioManager.Instance?.PlayScannerPing();
-            if (kbd.IsKeyDown(Keys.F2) && _prevKbd.IsKeyUp(Keys.F2) && UpgradeManager.Instance != null && UpgradeManager.Instance.TryUpgradeGrinder())
-                AudioManager.Instance?.PlayScannerPing();
-            if (kbd.IsKeyDown(Keys.F3) && _prevKbd.IsKeyUp(Keys.F3) && UpgradeManager.Instance != null && UpgradeManager.Instance.TryUpgradeWelder())
-                AudioManager.Instance?.PlayScannerPing();
-        }
-
         public void StopOperations()
         {
             IsOperating = false;
             ArcFlickerIntensity = 0f;
             PryImpulse = 0f;
-            AudioManager.Instance?.StopAllLoops();
+            AudioManager.Instance?.StopToolLoops();
         }
     }
 }

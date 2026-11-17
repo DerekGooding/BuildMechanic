@@ -95,6 +95,8 @@ namespace BuildMechanic
             {
                 if (_toolManager.IsShopOpen)
                     _toolManager.IsShopOpen = false;
+                else if (_proving.CurrentStage == ProvingStage.TelemetryVerdict)
+                    _proving.DismissVerdict();
                 else
                     Exit();
             }
@@ -192,7 +194,7 @@ namespace BuildMechanic
             Ray mouseRay = _camera.GetMouseRay(mouse.Position, GraphicsDevice.Viewport);
 
             // Update tool system & interactions
-            _toolManager.Update(gameTime, mouseRay, _chassis, _vfx);
+            _toolManager.Update(gameTime, mouseRay, _chassis, _vfx, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
 
             // Update physics & chassis parts
             _chassis.Update(dt);

@@ -33,7 +33,7 @@ namespace BuildMechanic.Gameplay
 
         public void TriggerTest(MechChassis chassis)
         {
-            if (CurrentStage != ProvingStage.Idle) return;
+            if (CurrentStage != ProvingStage.Idle && CurrentStage != ProvingStage.TelemetryVerdict) return;
 
             CurrentStage = ProvingStage.ReactorSpool;
             StageTimer = 0.0f;
@@ -41,10 +41,17 @@ namespace BuildMechanic.Gameplay
             ServoSineOffset = 0.0f;
             HasRunTest = false;
             IsFlawless = false;
-            BonusAwarded = false;
             FaultMessages.Clear();
 
             AudioManager.Instance?.PlayReactorSpool();
+        }
+
+        public void DismissVerdict()
+        {
+            if (CurrentStage == ProvingStage.TelemetryVerdict)
+            {
+                CurrentStage = ProvingStage.Idle;
+            }
         }
 
         public void Update(float dt, MechChassis chassis)

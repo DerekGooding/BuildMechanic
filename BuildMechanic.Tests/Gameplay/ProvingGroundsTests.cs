@@ -1,5 +1,7 @@
+using Microsoft.Xna.Framework;
 using BuildMechanic.Gameplay;
 using BuildMechanic.Simulation;
+using BuildMechanic.UI;
 using Xunit;
 
 namespace BuildMechanic.Tests.Gameplay
@@ -75,6 +77,55 @@ namespace BuildMechanic.Tests.Gameplay
             Assert.True(proving.PassedChecks < 5);
             Assert.NotEmpty(proving.FaultMessages);
             Assert.False(proving.BonusAwarded);
+        }
+
+        [Fact]
+        public void ProvingGrounds_RetestFromVerdict_DoesNotDuplicateBonus_AndDismissWorks()
+        {
+            var chassis = new MechChassis();
+            chassis.Initialize();
+            var upgradeMgr = new UpgradeManager { Credits = 500 };
+
+            var proving = new ProvingGroundsManager();
+            proving.TriggerTest(chassis);
+            proving.Update(1.6f, chassis);
+            proving.Update(1.6f, chassis);
+            proving.Update(1.9f, chassis);
+
+            Assert.Equal(ProvingStage.TelemetryVerdict, proving.CurrentStage);
+            int creditsAfterFirst = upgradeMgr.Credits;
+            Assert.Equal(500 + proving.CertificationBonus, creditsAfterFirst);
+
+            // Retest directly from TelemetryVerdict
+            proving.TriggerTest(chassis);
+            Assert.Equal(ProvingStage.ReactorSpool, proving.CurrentStage);
+            proving.Update(1.6f, chassis);
+            proving.Update(1.6f, chassis);
+            proving.Update(1.9f, chassis);
+
+            Assert.Equal(ProvingStage.TelemetryVerdict, proving.CurrentStage);
+            Assert.Equal(creditsAfterFirst, upgradeMgr.Credits); // Bonus NOT duplicated
+
+            // Dismiss verdict
+            proving.DismissVerdict();
+            Assert.Equal(ProvingStage.Idle, proving.CurrentStage);
+        }
+
+        [Fact]
+        public void HUDShopView_MouseClick_UpgradesAndCloses()
+        {
+            var upgradeMgr = new UpgradeManager { Credits = 10000 };
+            var rects = HUDShopView.GetButtonRects(1280, 720);
+
+            bool handled = HUDShopView.TryHandleClick(rects.driverBtn.Center, 1280, 720, out bool closeReq);
+            Assert.True(handled);
+            Assert.False(closeReq);
+            Assert.Equal(2, upgradeMgr.DriverLevel);
+            Assert.True(upgradeMgr.Credits < 10000);
+
+            bool closeHandled = HUDShopView.TryHandleClick(rects.closeBtn.Center, 1280, 720, out bool shouldClose);
+            Assert.True(closeHandled);
+            Assert.True(shouldClose);
         }
     }
 }

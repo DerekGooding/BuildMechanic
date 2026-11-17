@@ -216,11 +216,16 @@ namespace BuildMechanic.Audio
             _craneEchoSfx?.Play(MasterVolume * 0.50f, 0f, 0f);
         }
 
-        public void StopAllLoops()
+        public void StopToolLoops()
         {
             _driverLoopInstance?.Stop();
             _grinderLoopInstance?.Stop();
             _welderLoopInstance?.Stop();
+        }
+
+        public void StopAllLoops()
+        {
+            StopToolLoops();
             _hvacLoopInstance?.Stop();
         }
 

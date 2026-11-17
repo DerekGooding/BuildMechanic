@@ -50,7 +50,7 @@ namespace BuildMechanic.UI
             DrawTopStatusBar(spriteBatch, sw, contractManager);
             DrawContractTracker(spriteBatch, contractManager, chassis);
             if (!toolManager.IsShopOpen)
-                HUDTargetTelemetry.DrawTargetCard(spriteBatch, _pixel, _font, sw - 400, 48, toolManager);
+                HUDTargetTelemetry.DrawTargetCard(spriteBatch, _pixel, _font, sw - 470, 48, toolManager);
             DrawToolHotbar(spriteBatch, sw, sh, toolManager);
             DrawControlsLegend(spriteBatch, sw - 290, sh - 130);
 

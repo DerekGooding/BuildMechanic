@@ -57,7 +57,7 @@ namespace BuildMechanic.UI
             SpriteBatch sb, Texture2D pixel, ProceduralFont font,
             int x, int y, ToolManager tools)
         {
-            int w = 380;
+            int w = 450;
             if (tools.HoveredPlate == null && tools.HoveredBolt == null && tools.HoveredCrack == null &&
                 tools.HoveredHydraulic == null && tools.HoveredRelay == null) return;
 
@@ -75,7 +75,7 @@ namespace BuildMechanic.UI
             else if (tools.HoveredCrack != null)
                 DrawCrackTelemetry(sb, pixel, font, x, y, w, tools.HoveredCrack, tools.HoveredPlate);
             else if (tools.HoveredPlate != null)
-                DrawPlateTelemetry(sb, pixel, font, x, y, w, tools.HoveredPlate);
+                DrawPlateTelemetry(sb, pixel, font, x, y, w, tools.HoveredPlate, tools);
         }
 
         private static void DrawHydraulicTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, HydraulicCylinder hyl)
@@ -147,7 +147,7 @@ namespace BuildMechanic.UI
             font.DrawString(sb, action, new Vector2(x + 14, y + 78), actionCol, 1.15f);
         }
 
-        private static void DrawPlateTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, ArmorPlate p)
+        private static void DrawPlateTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, ArmorPlate p, ToolManager tools)
         {
             font.DrawString(sb, p.DisplayName.ToUpper(), new Vector2(x + 14, y + 12), Color.Cyan, 1.50f);
             font.DrawString(sb, $"BALLISTIC INTEGRITY: {(int)p.Integrity}% | FASTENERS: {p.Bolts.Count(b => b.IsTorqued)}/{p.Bolts.Count}", new Vector2(x + 14, y + 36), Color.Silver, 1.25f);
@@ -157,6 +157,15 @@ namespace BuildMechanic.UI
 
             string mountStatus = GetPlateMountStatus(p, out Color mountCol);
             font.DrawString(sb, $"STATUS: {mountStatus}", new Vector2(x + 14, y + 78), mountCol, 1.15f);
+
+            if (tools.ActiveTool == ToolType.PaintGun)
+            {
+                Color swatch = ArmorDecal.PaintPalette[tools.ActiveColorIndex];
+                string cname = ArmorDecal.PaletteNames[tools.ActiveColorIndex].ToUpper();
+                sb.Draw(pixel, new Rectangle(x + 14, y + 104, 18, 18), swatch);
+                sb.Draw(pixel, new Rectangle(x + 14, y + 104, 18, 1), Color.White);
+                font.DrawString(sb, $"COATING: {cname} [LMB: SPRAY | P: CYCLE]", new Vector2(x + 40, y + 106), Color.Silver, 1.15f);
+            }
         }
 
         public static string GetPlateMountStatus(ArmorPlate p, out Color mountCol)
