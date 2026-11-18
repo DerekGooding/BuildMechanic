@@ -69,7 +69,7 @@ namespace BuildMechanic.Graphics.Renderers
             DrawCylinder(effect, new Vector3(0.55f, 1.35f, 0), 0.16f, 0.35f);
 
             // 2. Heavy Upper Torso Core Frame & Fusion Reactor Backpack
-            effect.DiffuseColor = new Vector3(0.65f, 0.68f, 0.74f);
+            effect.DiffuseColor = chassis.ActiveArchetype?.ChassisAccentTint ?? new Vector3(0.65f, 0.68f, 0.74f);
             effect.World = Matrix.CreateTranslation(new Vector3(0, 2.7f, 0.05f));
             _spineMesh.Draw(device, effect);
 

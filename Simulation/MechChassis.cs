@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using BuildMechanic.Simulation.Archetypes;
 using BuildMechanic.Simulation.Graph;
 
 namespace BuildMechanic.Simulation
@@ -14,6 +15,7 @@ namespace BuildMechanic.Simulation
         public List<WiringHarness> Harnesses { get; set; } = new List<WiringHarness>();
         public List<RetainingBracket> Brackets { get; set; } = new List<RetainingBracket>();
         public List<MechComponent> Components { get; set; } = new List<MechComponent>();
+        public MechArchetype ActiveArchetype { get; set; } = MechArchetype.GetForContract(1);
 
         // 6 Modular Armor Plates across 3 Sectors
         public ArmorPlate LeftTorsoPlate { get; private set; }
@@ -104,6 +106,7 @@ namespace BuildMechanic.Simulation
             foreach (var plate in Plates)
             {
                 plate.DetachGuard = p => IsWorkbenchAvailable(p);
+                plate.BaseCoatingColor = ActiveArchetype.PrimaryArmorColor;
             }
 
             // Setup internal sub-armor hydraulics, relays, wiring harnesses, retaining brackets, and deep component graph
@@ -259,8 +262,12 @@ namespace BuildMechanic.Simulation
 
             foreach (var comp in Components)
             {
-                bool faulty = comp.Id == "comp_tl_impeller" && targetSet.Contains(comp.SectorId);
-                comp.Configure(ComponentMountState.Mounted, faulty, fastenersTorqued: true);
+                bool inDamagedSector = targetSet.Contains(comp.SectorId);
+                bool isCoreUnit = string.IsNullOrEmpty(comp.RequiredBase);
+                bool faulty = inDamagedSector && isCoreUnit;
+                var wear = faulty ? ComponentWearState.Seized
+                    : (inDamagedSector && comp.LayerDepth == 3 ? ComponentWearState.Rusty : ComponentWearState.Clean);
+                comp.Configure(ComponentMountState.Mounted, faulty, fastenersTorqued: true, wear: wear);
             }
         }
 

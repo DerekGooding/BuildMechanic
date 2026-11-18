@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BuildMechanic.Audio;
 using BuildMechanic.Simulation;
+using BuildMechanic.Simulation.Archetypes;
 
 namespace BuildMechanic.Gameplay
 {
@@ -65,7 +66,8 @@ namespace BuildMechanic.Gameplay
 
             ActiveContract = BuildContract(contractNumber);
 
-            // Re-initialize plates and apply contract's battle damage
+            // Re-initialize plates with contract archetype and apply battle damage
+            chassis.ActiveArchetype = MechArchetype.GetForContract(contractNumber);
             chassis.Initialize();
             chassis.ConfigureDamage(ActiveContract.DamagedPlateIds);
         }
@@ -128,7 +130,7 @@ namespace BuildMechanic.Gameplay
                     break;
 
                 case 2:
-                    title = "Ironclad Bruiser - Dual Torso Refit";
+                    title = "Spectre Recon - Dual Torso Refit";
                     client = "Solaris Heavy Industries";
                     reward = 7500;
                     damagedIds.Add("plate_torso_left");
@@ -136,7 +138,7 @@ namespace BuildMechanic.Gameplay
                     break;
 
                 case 3:
-                    title = "Aegis Colossus - Pauldron & Greave Overhaul";
+                    title = "Colossus Siege - Pauldron & Greave Overhaul";
                     client = "Garrison Defense Fleet";
                     reward = 10500;
                     damagedIds.Add("plate_shoulder_left");
@@ -145,10 +147,10 @@ namespace BuildMechanic.Gameplay
                     break;
 
                 default:
-                    // Procedural Contract #4+
-                    title = $"Combat Veteran Mk.{number} - Field Rebuild";
+                    var arch = MechArchetype.GetForContract(number);
+                    title = $"{arch.Name} Mk.{number} - Field Rebuild";
                     client = "Frontline Vanguard Command";
-                    reward = 8000 + (number - 3) * 2500;
+                    reward = (int)((8000 + (number - 3) * 2500) * arch.PayoutMultiplier);
 
                     var allPlates = new string[]
                     {

@@ -24,6 +24,7 @@ namespace BuildMechanic
         private ContractManager _contractManager;
         private ToolManager _toolManager;
         private UpgradeManager _upgradeManager;
+        private PartsCatalogManager _partsCatalog;
         private ProvingGroundsManager _proving;
         private SceneRenderer _sceneRenderer;
         private VFXManager _vfx;
@@ -59,6 +60,7 @@ namespace BuildMechanic
             _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 3.2f, 0.0f, 0.12f);
 
             _upgradeManager = new UpgradeManager();
+            _partsCatalog = new PartsCatalogManager();
 
             _chassis = new MechChassis();
             _contractManager = new ContractManager();
@@ -96,13 +98,15 @@ namespace BuildMechanic
             {
                 if (_toolManager.IsShopOpen)
                     _toolManager.IsShopOpen = false;
+                else if (_toolManager.IsCatalogOpen)
+                    _toolManager.IsCatalogOpen = false;
                 else if (_proving.CurrentStage == ProvingStage.TelemetryVerdict)
                     _proving.DismissVerdict();
                 else
                     Exit();
             }
 
-            if (!_toolManager.IsShopOpen)
+            if (!_toolManager.IsShopOpen && !_toolManager.IsCatalogOpen)
             {
                 // Cycle camera sectors (C key)
                 if (kbd.IsKeyDown(Keys.C) && _prevKeyboard.IsKeyUp(Keys.C))
@@ -161,6 +165,11 @@ namespace BuildMechanic
                 if (kbd.IsKeyDown(Keys.H) && _prevKeyboard.IsKeyUp(Keys.H))
                     _hud.ShowHelpDrawer = !_hud.ShowHelpDrawer;
 
+                if (kbd.IsKeyDown(Keys.Z) && _prevKeyboard.IsKeyUp(Keys.Z))
+                    _camera.RotateTurntable(-MathHelper.PiOver4);
+                if (kbd.IsKeyDown(Keys.X) && _prevKeyboard.IsKeyUp(Keys.X))
+                    _camera.RotateTurntable(MathHelper.PiOver4);
+
                 if (kbd.IsKeyDown(Keys.Space) && _prevKeyboard.IsKeyUp(Keys.Space))
                 {
                     _hud.ActiveSectorIndex = 5;
@@ -200,12 +209,12 @@ namespace BuildMechanic
             bool overHud = _hud.IsPointerOverHUD(mouse.Position, sw, sh);
             bool justClicked = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released;
 
-            if (!_toolManager.IsShopOpen && justClicked && overHud)
+            if (!_toolManager.IsShopOpen && !_toolManager.IsCatalogOpen && justClicked && overHud)
             {
                 _hud.HandleClick(mouse.Position, sw, sh, _toolManager, _camera, _proving, _chassis);
             }
 
-            bool blockCam = _toolManager.IsShopOpen || overHud || _proving.CurrentStage == ProvingStage.TelemetryVerdict;
+            bool blockCam = _toolManager.IsShopOpen || _toolManager.IsCatalogOpen || overHud || _proving.CurrentStage == ProvingStage.TelemetryVerdict;
             _camera.Update(gameTime, GraphicsDevice.Viewport, blockCam);
 
             // Get 3D ray under mouse cursor

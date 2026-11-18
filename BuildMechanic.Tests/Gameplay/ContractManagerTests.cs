@@ -55,6 +55,8 @@ namespace BuildMechanic.Tests.Gameplay
             harness.SnapReplacement();
             var impeller = chassis.Components.First(c => c.Id == "comp_tl_impeller");
             impeller.ServiceOrReplace();
+            var rib = chassis.Components.First(c => c.Id == "comp_tl_rib");
+            rib.CleanRust(2.0f);
             Assert.True(contract.Objectives[3].Evaluate(chassis));
 
             // Step 4: Reinstall plate and torque all 24 fasteners across chassis

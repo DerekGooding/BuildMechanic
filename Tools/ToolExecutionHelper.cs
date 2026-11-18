@@ -61,7 +61,16 @@ namespace BuildMechanic.Tools
                     break;
 
                 case ToolType.AngleGrinder:
-                    if (isLmb && tools.CanRepairCrack(tools.HoveredCrack, tools.HoveredPlate, ToolType.AngleGrinder))
+                    if (isLmb && tools.HoveredComponent != null && tools.HoveredComponent.WearState == ComponentWearState.Rusty)
+                    {
+                        isOperating = true;
+                        AudioManager.Instance?.PlayGrinderLoop(true);
+                        sparks?.Emit(tools.HitPoint, Vector3.Right, 4);
+                        float grindMult = UpgradeManager.Instance?.GetGrinderSpeed() ?? 1.0f;
+                        if (tools.HoveredComponent.CleanRust(dt * grindMult))
+                            AudioManager.Instance?.PlayScannerPing();
+                    }
+                    else if (isLmb && tools.CanRepairCrack(tools.HoveredCrack, tools.HoveredPlate, ToolType.AngleGrinder))
                     {
                         isOperating = true;
                         AudioManager.Instance?.PlayGrinderLoop(true);
@@ -133,9 +142,19 @@ namespace BuildMechanic.Tools
             {
                 pryImpulse = 0.9f;
                 var comp = tools.HoveredComponent;
-                if (comp.IsFaulty && ComponentDependencySolver.GetBlockingNames(comp, chassis).Count == 0)
+                if ((comp.IsFaulty || comp.WearState == ComponentWearState.Seized)
+                    && ComponentDependencySolver.GetBlockingNames(comp, chassis).Count == 0)
                 {
-                    if (comp.ServiceOrReplace()) AudioManager.Instance?.PlayScannerPing();
+                    bool consumed = PartsCatalogManager.Instance?.TryConsumeForReplacement(comp.Category, comp.ReplacementCost) ?? true;
+                    if (consumed && comp.ServiceOrReplace())
+                    {
+                        PartsCatalogManager.Instance?.ScrapPart(comp.ScrapValue);
+                        AudioManager.Instance?.PlayScannerPing();
+                    }
+                    else
+                    {
+                        AudioManager.Instance?.PlayTorqueClick();
+                    }
                     return;
                 }
 

@@ -34,6 +34,7 @@ namespace BuildMechanic.Tools
         public ToolType PreviousWorkTool { get; private set; } = ToolType.ImpactDriver;
         public DriverDirection DriverDir { get; private set; } = DriverDirection.Reverse;
         public bool IsShopOpen { get; set; } = false;
+        public bool IsCatalogOpen { get; set; } = false;
         public bool IsMouseOverUI { get; set; } = false;
         public int ActiveColorIndex { get; private set; } = 1; // Default: Military Olive
 
@@ -123,13 +124,29 @@ namespace BuildMechanic.Tools
             if (kbd.IsKeyDown(Keys.U) && _prevKbd.IsKeyUp(Keys.U))
             {
                 IsShopOpen = !IsShopOpen;
-                if (IsShopOpen) StopOperations();
+                if (IsShopOpen) { IsCatalogOpen = false; StopOperations(); }
+            }
+
+            if (kbd.IsKeyDown(Keys.K) && _prevKbd.IsKeyUp(Keys.K))
+            {
+                IsCatalogOpen = !IsCatalogOpen;
+                if (IsCatalogOpen) { IsShopOpen = false; StopOperations(); }
             }
 
             if (IsShopOpen)
             {
                 HUDShopView.HandleInput(kbd, _prevKbd, mouse, _prevMouse, sw, sh, out bool closeRequested);
                 if (closeRequested) IsShopOpen = false;
+                _prevKbd = kbd;
+                _prevMouse = mouse;
+                _prevScroll = mouse.ScrollWheelValue;
+                return;
+            }
+
+            if (IsCatalogOpen)
+            {
+                HUDCatalogView.HandleInput(kbd, _prevKbd, mouse, _prevMouse, sw, sh, out bool closeRequested);
+                if (closeRequested) IsCatalogOpen = false;
                 _prevKbd = kbd;
                 _prevMouse = mouse;
                 _prevScroll = mouse.ScrollWheelValue;
@@ -211,9 +228,17 @@ namespace BuildMechanic.Tools
             HoveredComponentActionHint = null;
             if (HoveredComponent == null) return;
 
-            if (HoveredComponent.IsFaulty && ComponentDependencySolver.GetBlockingNames(HoveredComponent, chassis).Count == 0)
+            if ((HoveredComponent.IsFaulty || HoveredComponent.WearState == ComponentWearState.Seized)
+                && ComponentDependencySolver.GetBlockingNames(HoveredComponent, chassis).Count == 0)
             {
-                HoveredComponentActionHint = "[3:PRY] REPLACE FAULTY UNIT";
+                HoveredComponentActionHint = "[3:PRY] SCRAP & REPLACE UNIT";
+                return;
+            }
+
+            if (HoveredComponent.WearState == ComponentWearState.Rusty
+                && ComponentDependencySolver.GetBlockingNames(HoveredComponent, chassis).Count == 0)
+            {
+                HoveredComponentActionHint = "[4:GRIND] CLEAN CORROSION";
                 return;
             }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -15,7 +16,20 @@ namespace BuildMechanic.Simulation.Graph
         Cowling,
         StructuralRib,
         Carrier,
-        ImpellerPump
+        ImpellerPump,
+        GyroCage,
+        PowerPCB,
+        GearRing,
+        Bearing,
+        ShockStrut,
+        Accumulator
+    }
+
+    public enum ComponentWearState
+    {
+        Clean,
+        Rusty,
+        Seized
     }
 
     public class MechComponent
@@ -31,7 +45,11 @@ namespace BuildMechanic.Simulation.Graph
         public Vector3 Dimensions { get; set; } = new Vector3(0.32f, 0.16f, 0.025f);
 
         public ComponentMountState State { get; private set; } = ComponentMountState.Mounted;
+        public ComponentWearState WearState { get; private set; } = ComponentWearState.Clean;
+        public float RustLevel { get; private set; } = 0f; // 0..1
         public bool IsFaulty { get; private set; } = false;
+        public int ReplacementCost { get; set; } = 350;
+        public int ScrapValue { get; set; } = 80;
 
         public List<Bolt> Fasteners { get; set; } = new List<Bolt>();
         public List<string> BlockedBy { get; set; } = new List<string>();
@@ -40,24 +58,41 @@ namespace BuildMechanic.Simulation.Graph
         public Vector3 CurrentPosition => State == ComponentMountState.Mounted ? MountedPosition : RemovedPosition;
         public bool AllFastenersRemoved => Fasteners.Count == 0 || Fasteners.All(b => b.IsRemoved);
         public bool AllFastenersTorqued => Fasteners.Count == 0 || Fasteners.All(b => b.IsTorqued);
-        public bool IsNominal => !IsFaulty && State == ComponentMountState.Mounted && AllFastenersTorqued;
+        public bool IsNominal => !IsFaulty && WearState == ComponentWearState.Clean && State == ComponentMountState.Mounted && AllFastenersTorqued;
 
         public Matrix GetWorldMatrix() => Matrix.CreateTranslation(CurrentPosition);
 
-        public void Configure(ComponentMountState state, bool faulty, bool fastenersTorqued)
+        public void Configure(ComponentMountState state, bool faulty, bool fastenersTorqued, ComponentWearState wear = ComponentWearState.Clean)
         {
             State = state;
             IsFaulty = faulty;
+            WearState = wear;
+            RustLevel = wear == ComponentWearState.Rusty ? 1.0f : (wear == ComponentWearState.Seized ? 1.0f : 0f);
             foreach (var b in Fasteners)
             {
                 b.ThreadProgress = fastenersTorqued ? 1.0f : 0.0f;
             }
         }
 
+        public bool CleanRust(float dt)
+        {
+            if (WearState != ComponentWearState.Rusty) return false;
+            RustLevel = Math.Max(0f, RustLevel - dt * 0.65f);
+            if (RustLevel <= 0.01f)
+            {
+                RustLevel = 0f;
+                WearState = ComponentWearState.Clean;
+                return true;
+            }
+            return false;
+        }
+
         public bool ServiceOrReplace()
         {
-            if (!IsFaulty) return false;
+            if (!IsFaulty && WearState != ComponentWearState.Seized) return false;
             IsFaulty = false;
+            WearState = ComponentWearState.Clean;
+            RustLevel = 0f;
             return true;
         }
 

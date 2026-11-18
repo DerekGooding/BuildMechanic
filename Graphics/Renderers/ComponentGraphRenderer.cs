@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,19 +12,22 @@ namespace BuildMechanic.Graphics.Renderers
 {
     public class ComponentGraphRenderer : IDisposable
     {
-        private SimpleMesh _cowlingMesh;
-        private SimpleMesh _ribMesh;
-        private SimpleMesh _carrierMesh;
-        private SimpleMesh _impellerMesh;
+        private readonly Dictionary<ComponentCategory, SimpleMesh> _meshes = new Dictionary<ComponentCategory, SimpleMesh>();
 
         public void Draw(GraphicsDevice device, BasicEffect effect, Texture2D chassisTex, MechChassis chassis, ToolManager tools)
         {
-            if (_cowlingMesh == null)
+            if (_meshes.Count == 0)
             {
-                _cowlingMesh = DeepBayMeshBuilder.CreateThermalCowling(device);
-                _ribMesh = DeepBayMeshBuilder.CreateStructuralRib(device);
-                _carrierMesh = DeepBayMeshBuilder.CreatePumpCarrier(device);
-                _impellerMesh = DeepBayMeshBuilder.CreateImpellerPump(device);
+                _meshes[ComponentCategory.Cowling] = DeepBayMeshBuilder.CreateThermalCowling(device);
+                _meshes[ComponentCategory.StructuralRib] = DeepBayMeshBuilder.CreateStructuralRib(device);
+                _meshes[ComponentCategory.Carrier] = DeepBayMeshBuilder.CreatePumpCarrier(device);
+                _meshes[ComponentCategory.ImpellerPump] = DeepBayMeshBuilder.CreateImpellerPump(device);
+                _meshes[ComponentCategory.GyroCage] = CoreInternalsMeshBuilder.CreateGyroCage(device);
+                _meshes[ComponentCategory.PowerPCB] = CoreInternalsMeshBuilder.CreatePowerPCB(device);
+                _meshes[ComponentCategory.GearRing] = CoreInternalsMeshBuilder.CreateGearRing(device);
+                _meshes[ComponentCategory.Bearing] = CoreInternalsMeshBuilder.CreateBearingAssembly(device);
+                _meshes[ComponentCategory.ShockStrut] = CoreInternalsMeshBuilder.CreateShockStrut(device);
+                _meshes[ComponentCategory.Accumulator] = CoreInternalsMeshBuilder.CreateAccumulator(device);
             }
 
             effect.Texture = chassisTex;
@@ -34,39 +38,48 @@ namespace BuildMechanic.Graphics.Renderers
                 if (parentPlate != null && parentPlate.State == PlateMountState.Mounted) continue;
 
                 bool isHovered = tools.HoveredComponent == comp;
-                effect.DiffuseColor = GetColor(comp, isHovered);
+                effect.DiffuseColor = GetMaterialColor(comp, isHovered);
                 effect.World = Matrix.CreateScale(comp.Dimensions) * comp.GetWorldMatrix();
 
-                SimpleMesh mesh = comp.Category switch
+                if (_meshes.TryGetValue(comp.Category, out var mesh))
                 {
-                    ComponentCategory.Cowling => _cowlingMesh,
-                    ComponentCategory.StructuralRib => _ribMesh,
-                    ComponentCategory.Carrier => _carrierMesh,
-                    _ => _impellerMesh
-                };
-                mesh.Draw(device, effect);
+                    mesh.Draw(device, effect);
+                }
             }
         }
 
-        private static Vector3 GetColor(MechComponent comp, bool isHovered)
+        private static Vector3 GetMaterialColor(MechComponent comp, bool isHovered)
         {
             if (isHovered) return new Vector3(1.5f, 1.35f, 0.45f);
-            if (comp.IsFaulty) return new Vector3(0.95f, 0.25f, 0.15f);
-            return comp.Category switch
+            if (comp.IsFaulty || comp.WearState == ComponentWearState.Seized) return new Vector3(0.95f, 0.22f, 0.14f);
+
+            Vector3 baseCol = comp.Category switch
             {
                 ComponentCategory.Cowling => new Vector3(0.35f, 0.40f, 0.48f),
-                ComponentCategory.StructuralRib => new Vector3(0.62f, 0.66f, 0.72f),
+                ComponentCategory.StructuralRib => new Vector3(0.64f, 0.68f, 0.74f),
                 ComponentCategory.Carrier => new Vector3(0.42f, 0.52f, 0.58f),
-                _ => new Vector3(0.20f, 0.78f, 0.68f)
+                ComponentCategory.ImpellerPump => new Vector3(0.20f, 0.78f, 0.68f),
+                ComponentCategory.GyroCage => new Vector3(0.78f, 0.68f, 0.35f),
+                ComponentCategory.PowerPCB => new Vector3(0.18f, 0.58f, 0.32f),
+                ComponentCategory.GearRing => new Vector3(0.72f, 0.74f, 0.78f),
+                ComponentCategory.Bearing => new Vector3(0.84f, 0.86f, 0.90f),
+                ComponentCategory.ShockStrut => new Vector3(0.82f, 0.48f, 0.18f),
+                _ => new Vector3(0.28f, 0.62f, 0.82f)
             };
+
+            if (comp.WearState == ComponentWearState.Rusty && comp.RustLevel > 0f)
+            {
+                Vector3 rustTint = new Vector3(0.48f, 0.24f, 0.12f);
+                return Vector3.Lerp(baseCol, rustTint, comp.RustLevel * 0.85f);
+            }
+
+            return baseCol;
         }
 
         public void Dispose()
         {
-            _cowlingMesh?.Dispose();
-            _ribMesh?.Dispose();
-            _carrierMesh?.Dispose();
-            _impellerMesh?.Dispose();
+            foreach (var m in _meshes.Values) m?.Dispose();
+            _meshes.Clear();
         }
     }
 }

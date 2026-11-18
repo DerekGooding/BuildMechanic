@@ -59,6 +59,7 @@ namespace BuildMechanic.Tests.Simulation
             foreach (var b in carrier.Fasteners) b.ThreadProgress = 1f;
 
             Assert.True(ComponentDependencySolver.CanMount(rib, chassis, out _));
+            Assert.True(rib.CleanRust(2.0f));
             rib.SetMountedState(ComponentMountState.Mounted);
             foreach (var b in rib.Fasteners) b.ThreadProgress = 1f;
 

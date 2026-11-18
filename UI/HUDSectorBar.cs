@@ -70,6 +70,7 @@ namespace BuildMechanic.UI
             font.DrawString(sb, "1-8 / Q,E / CTRL+WHEEL: TOOLS", new Vector2(x + 12, y + 74), Color.Silver, 1.05f);
             font.DrawString(sb, "TAB: SCANNER | R: FWD/REV | P: PAINT", new Vector2(x + 12, y + 94), Color.Silver, 1.05f);
             font.DrawString(sb, "C: SECTOR | F: FOCUS | SPACE: RESET", new Vector2(x + 12, y + 114), Color.Silver, 1.05f);
+            font.DrawString(sb, "Z/X: TURNTABLE | K: PARTS | U: SHOP", new Vector2(x + 12, y + 132), Color.Orange, 1.05f);
         }
     }
 }

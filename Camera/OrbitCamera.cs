@@ -43,6 +43,11 @@ namespace BuildMechanic.Camera
             _desiredPitch = Math.Clamp(pitch, -1.4f, 1.4f);
         }
 
+        public void RotateTurntable(float deltaYaw)
+        {
+            _desiredYaw += deltaYaw;
+        }
+
         public void Update(GameTime gameTime, Viewport viewport, bool blockInput = false)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;

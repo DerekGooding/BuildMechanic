@@ -15,6 +15,7 @@ namespace BuildMechanic.UI
         private readonly ProceduralFont _font;
         private readonly Texture2D _pixel;
         private readonly HUDShopView _shopView = new HUDShopView();
+        private readonly HUDCatalogView _catalogView = new HUDCatalogView();
         private readonly HUDProvingView _provingView = new HUDProvingView();
 
         public bool ShowHelpDrawer { get; set; } = false;
@@ -49,7 +50,13 @@ namespace BuildMechanic.UI
                 if (GetShopButtonRect(sw).Contains(mousePos))
                 {
                     tools.IsShopOpen = !tools.IsShopOpen;
-                    if (tools.IsShopOpen) tools.StopOperations();
+                    if (tools.IsShopOpen) { tools.IsCatalogOpen = false; tools.StopOperations(); }
+                    return true;
+                }
+                if (GetCatalogButtonRect(sw).Contains(mousePos))
+                {
+                    tools.IsCatalogOpen = !tools.IsCatalogOpen;
+                    if (tools.IsCatalogOpen) { tools.IsShopOpen = false; tools.StopOperations(); }
                     return true;
                 }
                 return true;
@@ -81,7 +88,8 @@ namespace BuildMechanic.UI
             int sh = viewport.Height;
             Point mousePos = Mouse.GetState().Position;
 
-            if (!toolManager.IsShopOpen)
+            bool modalOpen = toolManager.IsShopOpen || toolManager.IsCatalogOpen;
+            if (!modalOpen)
             {
                 HUDTargetTelemetry.DrawHolographicReticle(spriteBatch, _pixel, _font, mousePos.X, mousePos.Y, toolManager);
                 if (toolManager.ActiveTool == ToolType.Scanner)
@@ -92,7 +100,7 @@ namespace BuildMechanic.UI
             HUDSectorBar.Draw(spriteBatch, _pixel, _font, ActiveSectorIndex, mousePos);
             DrawContractTracker(spriteBatch, sw, contractManager, chassis);
 
-            if (!toolManager.IsShopOpen)
+            if (!modalOpen)
             {
                 int cardW = Math.Clamp(sw / 3, 320, 440);
                 HUDTargetTelemetry.DrawTargetCard(spriteBatch, _pixel, _font, sw - cardW - 20, 42, toolManager, cardW);
@@ -109,6 +117,9 @@ namespace BuildMechanic.UI
             if (toolManager.IsShopOpen)
                 _shopView.Draw(spriteBatch, _pixel, _font, sw, sh);
 
+            if (toolManager.IsCatalogOpen)
+                _catalogView.Draw(spriteBatch, _pixel, _font, sw, sh);
+
             if (contractManager.IsFinished && (proving == null || proving.CurrentStage == ProvingStage.Idle))
                 DrawCompletionModal(spriteBatch, sw, sh, contractManager);
 
@@ -118,6 +129,7 @@ namespace BuildMechanic.UI
         private static Rectangle GetHelpButtonRect(int sw) => new Rectangle(sw - 94, 4, 78, 24);
         private static Rectangle GetTestButtonRect(int sw) => new Rectangle(sw - 186, 4, 86, 24);
         private static Rectangle GetShopButtonRect(int sw) => new Rectangle(sw - 278, 4, 86, 24);
+        private static Rectangle GetCatalogButtonRect(int sw) => new Rectangle(sw - 376, 4, 92, 24);
 
         private void DrawTopStatusBar(SpriteBatch sb, int sw, ContractManager contractManager, Point mousePos)
         {
@@ -135,6 +147,7 @@ namespace BuildMechanic.UI
             float credW = ProceduralFont.CalculateStringWidth(creditText, 1.45f);
             _font.DrawString(sb, creditText, new Vector2((sw - credW) * 0.5f, 7), Color.Gold, 1.45f);
 
+            DrawTopButton(sb, GetCatalogButtonRect(sw), "[K] PARTS", Color.Orange, mousePos);
             DrawTopButton(sb, GetShopButtonRect(sw), "[U] SHOP", Color.Yellow, mousePos);
             DrawTopButton(sb, GetTestButtonRect(sw), "[T] TEST", Color.LimeGreen, mousePos);
             DrawTopButton(sb, GetHelpButtonRect(sw), "[H] HELP", ShowHelpDrawer ? Color.Cyan : Color.Silver, mousePos);

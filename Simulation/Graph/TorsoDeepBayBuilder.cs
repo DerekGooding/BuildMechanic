@@ -64,6 +64,8 @@ namespace BuildMechanic.Simulation.Graph
                 blockedBy: new List<string> { "comp_tl_carrier" },
                 requiredBase: null,
                 boltCount: 0));
+
+            SectorDeepBayBuilder.PopulateOtherSectors(components);
         }
 
         private static MechComponent CreateWithBolts(
