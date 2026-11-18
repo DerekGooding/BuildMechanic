@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using BuildMechanic.Audio;
 using BuildMechanic.Graphics;
 using BuildMechanic.Simulation;
+using BuildMechanic.Simulation.Graph;
 using BuildMechanic.UI;
 using BuildMechanic.VFX;
 
@@ -44,6 +45,8 @@ namespace BuildMechanic.Tools
         public ElectricalRelay HoveredRelay { get; private set; }
         public WiringHarness HoveredHarness { get; private set; }
         public RetainingBracket HoveredBracket { get; private set; }
+        public MechComponent HoveredComponent { get; private set; }
+        public string HoveredComponentActionHint { get; private set; }
         public Vector3 HitPoint { get; private set; }
 
         public bool IsOperating { get; private set; }
@@ -181,7 +184,9 @@ namespace BuildMechanic.Tools
             HoveredRelay = hit.HoveredRelay;
             HoveredHarness = hit.HoveredHarness;
             HoveredBracket = hit.HoveredBracket;
+            HoveredComponent = hit.HoveredComponent;
             HitPoint = hit.HitPoint;
+            UpdateComponentHint(chassis);
 
             bool isLmb = mouse.LeftButton == ButtonState.Pressed;
             bool justClicked = isLmb && _prevMouse.LeftButton == ButtonState.Released;
@@ -189,7 +194,7 @@ namespace BuildMechanic.Tools
 
             float pry = Math.Max(0f, PryImpulse - dt * 4.5f);
             ToolExecutionHelper.Execute(
-                this, dt, isLmb, justClicked, isRmb, _rng,
+                this, chassis, dt, isLmb, justClicked, isRmb, _rng,
                 sparks, smoke, fluid, aerosol,
                 out bool operating, out float arc, ref pry);
 
@@ -201,6 +206,31 @@ namespace BuildMechanic.Tools
             _prevMouse = mouse;
         }
 
+        private void UpdateComponentHint(MechChassis chassis)
+        {
+            HoveredComponentActionHint = null;
+            if (HoveredComponent == null) return;
+
+            if (HoveredComponent.IsFaulty && ComponentDependencySolver.GetBlockingNames(HoveredComponent, chassis).Count == 0)
+            {
+                HoveredComponentActionHint = "[3:PRY] REPLACE FAULTY UNIT";
+                return;
+            }
+
+            if (HoveredComponent.State == ComponentMountState.Mounted)
+            {
+                HoveredComponentActionHint = ComponentDependencySolver.CanUnmount(HoveredComponent, chassis, out string reason)
+                    ? "[3:PRY] REMOVE TO RACK"
+                    : reason;
+            }
+            else
+            {
+                HoveredComponentActionHint = ComponentDependencySolver.CanMount(HoveredComponent, chassis, out string reason)
+                    ? "[3:PRY] RE-INSTALL"
+                    : reason;
+            }
+        }
+
         private void ClearHover()
         {
             HoveredPlate = null;
@@ -210,6 +240,8 @@ namespace BuildMechanic.Tools
             HoveredRelay = null;
             HoveredHarness = null;
             HoveredBracket = null;
+            HoveredComponent = null;
+            HoveredComponentActionHint = null;
         }
 
         public void StopOperations()

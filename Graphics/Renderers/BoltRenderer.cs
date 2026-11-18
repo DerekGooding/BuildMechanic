@@ -90,6 +90,29 @@ namespace BuildMechanic.Graphics.Renderers
                     _boltMesh.ShankMesh.Draw(device, effect);
                 }
             }
+
+            // Draw MechComponent fasteners when their outer armor plate is unmounted
+            foreach (var comp in chassis.Components)
+            {
+                var parentPlate = chassis.Plates.Find(p => p.Id == comp.SectorId);
+                if (parentPlate != null && parentPlate.State == PlateMountState.Mounted) continue;
+
+                Matrix compWorld = comp.GetWorldMatrix();
+                foreach (var bolt in comp.Fasteners)
+                {
+                    Vector3 boltPos = bolt.GetWorldPosition(compWorld);
+                    effect.DiffuseColor = tools.HoveredBolt == bolt
+                        ? new Vector3(1.8f, 1.6f, 0.4f)
+                        : (bolt.IsTorqued ? new Vector3(0.75f, 0.92f, 1.0f) : new Vector3(1.2f, 0.75f, 0.30f));
+
+                    Matrix boltRot = Matrix.CreateScale(0.55f) * Matrix.CreateRotationY(bolt.SpinAngle) * Matrix.CreateRotationX(MathHelper.PiOver2);
+                    effect.World = boltRot * Matrix.CreateTranslation(boltPos);
+                    effect.Texture = _headTex;
+                    _boltMesh.HeadMesh.Draw(device, effect);
+                    effect.Texture = _threadTex;
+                    _boltMesh.ShankMesh.Draw(device, effect);
+                }
+            }
         }
 
         public void Dispose()

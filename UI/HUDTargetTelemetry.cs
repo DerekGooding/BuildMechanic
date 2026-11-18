@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using BuildMechanic.Graphics;
 using BuildMechanic.Simulation;
+using BuildMechanic.Simulation.Graph;
 using BuildMechanic.Tools;
 
 namespace BuildMechanic.UI
@@ -20,12 +21,13 @@ namespace BuildMechanic.UI
                                 (tools.HoveredRelay != null ? Color.Magenta :
                                 (tools.HoveredHarness != null ? Color.Orange :
                                 (tools.HoveredBracket != null ? Color.LightSkyBlue :
-                                (tools.HoveredPlate != null ? Color.Cyan : Color.White * 0.75f))))));
+                                (tools.HoveredComponent != null ? (tools.HoveredComponent.IsFaulty ? Color.OrangeRed : Color.Aquamarine) :
+                                (tools.HoveredPlate != null ? Color.Cyan : Color.White * 0.75f)))))));
 
             bool hasTarget = tools.HoveredBolt != null || tools.HoveredCrack != null ||
                              tools.HoveredHydraulic != null || tools.HoveredRelay != null ||
                              tools.HoveredHarness != null || tools.HoveredBracket != null ||
-                             tools.HoveredPlate != null;
+                             tools.HoveredComponent != null || tools.HoveredPlate != null;
 
             int len = 8, gap = 4, thick = 2;
             sb.Draw(pixel, new Rectangle(cx - gap - len, cy - thick / 2, len, thick), reticleColor);
@@ -84,6 +86,8 @@ namespace BuildMechanic.UI
                     return tools.HoveredBracket.CanRemove ? "[3:PRY] REMOVE SHROUD" : "[2:DRV REV] UNBOLT SHROUD";
                 return "[3:PRY] RE-SEAT SHROUD";
             }
+            if (tools.HoveredComponent != null && !string.IsNullOrEmpty(tools.HoveredComponentActionHint))
+                return tools.HoveredComponentActionHint;
             return null;
         }
 
@@ -94,7 +98,8 @@ namespace BuildMechanic.UI
             int w = cardW;
             if (tools.HoveredPlate == null && tools.HoveredBolt == null && tools.HoveredCrack == null &&
                 tools.HoveredHydraulic == null && tools.HoveredRelay == null &&
-                tools.HoveredHarness == null && tools.HoveredBracket == null) return;
+                tools.HoveredHarness == null && tools.HoveredBracket == null &&
+                tools.HoveredComponent == null) return;
 
             int h = 155;
             sb.Draw(pixel, new Rectangle(x, y, w, h), new Color(16, 20, 26, 240));
@@ -109,6 +114,8 @@ namespace BuildMechanic.UI
                 DrawHarnessTelemetry(sb, pixel, font, x, y, w, tools.HoveredHarness);
             else if (tools.HoveredBracket != null)
                 DrawBracketTelemetry(sb, pixel, font, x, y, w, tools.HoveredBracket);
+            else if (tools.HoveredComponent != null)
+                DrawComponentTelemetry(sb, font, x, y, tools.HoveredComponent, tools.HoveredComponentActionHint);
             else if (tools.HoveredBolt != null)
                 DrawFastenerTelemetry(sb, pixel, font, x, y, w, tools.HoveredBolt);
             else if (tools.HoveredCrack != null)
@@ -169,6 +176,16 @@ namespace BuildMechanic.UI
             string ohmReadout = r.IsBlown ? "O.L. (OPEN LOOP)" : (r.TestedWithProbe ? "000.48 OHM" : "---.- OHM");
             Color ohmColor = r.IsBlown ? Color.Tomato : (r.TestedWithProbe ? Color.Cyan : Color.DarkGray);
             font.DrawString(sb, $"RESISTANCE: {ohmReadout}", new Vector2(x + 14, y + 80), ohmColor, 1.4f);
+        }
+
+        private static void DrawComponentTelemetry(SpriteBatch sb, ProceduralFont font, int x, int y, MechComponent c, string hint)
+        {
+            font.DrawString(sb, $"[L{c.LayerDepth}] {c.DisplayName.ToUpper()}", new Vector2(x + 14, y + 12), Color.Aquamarine, 1.40f);
+            string stateText = c.IsFaulty ? "FAULTY / SEIZED" : (c.State == ComponentMountState.Mounted ? "MOUNTED" : "ON STORAGE RACK");
+            Color stCol = c.IsFaulty ? Color.Tomato : (c.IsNominal ? Color.LimeGreen : Color.Gold);
+            font.DrawString(sb, $"STATE: {stateText} | BOLTS: {c.Fasteners.Count(b => b.IsTorqued)}/{c.Fasteners.Count}", new Vector2(x + 14, y + 40), stCol, 1.18f);
+            if (!string.IsNullOrEmpty(hint))
+                font.DrawString(sb, $"ACTION: {hint}", new Vector2(x + 14, y + 66), Color.Yellow, 1.15f);
         }
 
         private static void DrawFastenerTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, Bolt bolt)

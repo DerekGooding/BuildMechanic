@@ -4,6 +4,7 @@ using BuildMechanic.Audio;
 using BuildMechanic.Gameplay;
 using BuildMechanic.Graphics;
 using BuildMechanic.Simulation;
+using BuildMechanic.Simulation.Graph;
 using BuildMechanic.VFX;
 
 namespace BuildMechanic.Tools
@@ -12,6 +13,7 @@ namespace BuildMechanic.Tools
     {
         public static void Execute(
             ToolManager tools,
+            MechChassis chassis,
             float dt,
             bool isLmb,
             bool justClicked,
@@ -38,7 +40,8 @@ namespace BuildMechanic.Tools
                 case ToolType.ImpactDriver:
                     bool canDrivePlateBolt = tools.HoveredBolt != null && tools.HoveredPlate != null && tools.HoveredPlate.State == PlateMountState.Mounted;
                     bool canDriveBracketBolt = tools.HoveredBolt != null && tools.HoveredBracket != null && tools.HoveredBracket.State == BracketState.Secured;
-                    if (isLmb && (canDrivePlateBolt || canDriveBracketBolt))
+                    bool canDriveCompBolt = tools.HoveredBolt != null && tools.HoveredComponent != null && tools.HoveredComponent.State == ComponentMountState.Mounted;
+                    if (isLmb && (canDrivePlateBolt || canDriveBracketBolt || canDriveCompBolt))
                     {
                         isOperating = true;
                         AudioManager.Instance?.PlayDriverLoop(true);
@@ -54,7 +57,7 @@ namespace BuildMechanic.Tools
                     break;
 
                 case ToolType.PryBar:
-                    HandlePryBar(tools, justClicked, ref pryImpulse);
+                    HandlePryBar(tools, chassis, justClicked, ref pryImpulse);
                     break;
 
                 case ToolType.AngleGrinder:
@@ -122,9 +125,46 @@ namespace BuildMechanic.Tools
             }
         }
 
-        private static void HandlePryBar(ToolManager tools, bool justClicked, ref float pryImpulse)
+        private static void HandlePryBar(ToolManager tools, MechChassis chassis, bool justClicked, ref float pryImpulse)
         {
             if (!justClicked) return;
+
+            if (tools.HoveredComponent != null)
+            {
+                pryImpulse = 0.9f;
+                var comp = tools.HoveredComponent;
+                if (comp.IsFaulty && ComponentDependencySolver.GetBlockingNames(comp, chassis).Count == 0)
+                {
+                    if (comp.ServiceOrReplace()) AudioManager.Instance?.PlayScannerPing();
+                    return;
+                }
+
+                if (comp.State == ComponentMountState.Mounted)
+                {
+                    if (ComponentDependencySolver.CanUnmount(comp, chassis, out _))
+                    {
+                        comp.SetMountedState(ComponentMountState.Removed);
+                        AudioManager.Instance?.PlayPlateDetach();
+                    }
+                    else
+                    {
+                        AudioManager.Instance?.PlayTorqueClick();
+                    }
+                }
+                else
+                {
+                    if (ComponentDependencySolver.CanMount(comp, chassis, out _))
+                    {
+                        comp.SetMountedState(ComponentMountState.Mounted);
+                        AudioManager.Instance?.PlayPlateMount();
+                    }
+                    else
+                    {
+                        AudioManager.Instance?.PlayTorqueClick();
+                    }
+                }
+                return;
+            }
 
             if (tools.HoveredBracket != null)
             {

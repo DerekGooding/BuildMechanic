@@ -27,6 +27,7 @@ namespace BuildMechanic.Graphics
         private readonly BoltRenderer _boltRenderer;
         private readonly CrackRenderer _crackRenderer;
         private readonly SubsystemRenderer _subsystemRenderer;
+        private readonly ComponentGraphRenderer _componentGraphRenderer;
         private readonly ToolRenderer _toolRenderer;
 
         public Texture2D PixelTexture => _pixelTex;
@@ -59,6 +60,7 @@ namespace BuildMechanic.Graphics
             _boltRenderer = new BoltRenderer(device);
             _crackRenderer = new CrackRenderer(device, _boxMesh, _pixelTex);
             _subsystemRenderer = new SubsystemRenderer();
+            _componentGraphRenderer = new ComponentGraphRenderer();
             _toolRenderer = new ToolRenderer();
             _toolRenderer.Initialize(device);
         }
@@ -81,8 +83,9 @@ namespace BuildMechanic.Graphics
             // 3. Heavy Mech Chassis, Gimbals & Sub-Armor Bulkheads
             _chassisRenderer.Draw(_device, _effect, chassis, servoOffset);
 
-            // 4. Subsystem Internals (Hydraulic Cylinders & Avionics Relays)
+            // 4. Subsystem Internals (Hydraulic Cylinders, Avionics Relays & Deep Component Graph)
             _subsystemRenderer.DrawSubsystems(_device, _effect, _boxMesh, _cylinderMesh, _chassisTex, chassis, tools);
+            _componentGraphRenderer.Draw(_device, _effect, _chassisTex, chassis, tools);
 
             // 5. Beveled Composite Ballistic Armor Plates
             _plateRenderer.Draw(_device, _effect, chassis, tools);
@@ -112,6 +115,7 @@ namespace BuildMechanic.Graphics
             _boltRenderer?.Dispose();
             _crackRenderer?.Dispose();
             _subsystemRenderer?.Dispose();
+            _componentGraphRenderer?.Dispose();
             _toolRenderer?.Dispose();
         }
     }

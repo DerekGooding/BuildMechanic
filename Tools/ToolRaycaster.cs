@@ -1,6 +1,7 @@
 using System.Linq;
 using Microsoft.Xna.Framework;
 using BuildMechanic.Simulation;
+using BuildMechanic.Simulation.Graph;
 
 namespace BuildMechanic.Tools
 {
@@ -13,6 +14,7 @@ namespace BuildMechanic.Tools
         public ElectricalRelay HoveredRelay { get; set; }
         public WiringHarness HoveredHarness { get; set; }
         public RetainingBracket HoveredBracket { get; set; }
+        public MechComponent HoveredComponent { get; set; }
         public Vector3 HitPoint { get; set; }
     }
 
@@ -31,7 +33,10 @@ namespace BuildMechanic.Tools
 
             if (activeTool == ToolType.PryBar)
             {
-                // In PryBar mode, prioritize exposed brackets & unclipped/charred harnesses in open bays, then plates
+                // In PryBar mode, prioritize exposed deep components, brackets & harnesses, then plates
+                RaycastComponents(ray, chassis, result, ref closestDist);
+                if (result.HoveredComponent != null) return result;
+
                 RaycastBrackets(ray, chassis, result, ref closestDist, includeRemoved: true);
                 if (result.HoveredBracket != null) return result;
 
@@ -42,9 +47,10 @@ namespace BuildMechanic.Tools
                 return result;
             }
 
-            // 1. Plate Bolts & Bracket Bolts
+            // 1. Plate Bolts, Bracket Bolts & Component Fasteners
             RaycastPlateBolts(ray, chassis, result, ref closestDist);
             RaycastBracketBolts(ray, chassis, result, ref closestDist);
+            RaycastComponentBolts(ray, chassis, result, ref closestDist);
             if (result.HoveredBolt != null) return result;
 
             // 2. Cracks
@@ -64,7 +70,10 @@ namespace BuildMechanic.Tools
             }
             if (result.HoveredCrack != null) return result;
 
-            // 3. Secured Retaining Brackets (shield sub-bay internals until removed)
+            // 3. Secured Retaining Brackets & Deep Components
+            RaycastComponents(ray, chassis, result, ref closestDist);
+            if (result.HoveredComponent != null) return result;
+
             RaycastBrackets(ray, chassis, result, ref closestDist, includeRemoved: false);
             if (result.HoveredBracket != null) return result;
 
@@ -205,6 +214,45 @@ namespace BuildMechanic.Tools
                 {
                     closestDist = dist;
                     result.HoveredPlate = plate;
+                    result.HitPoint = ray.Position + ray.Direction * dist;
+                }
+            }
+        }
+
+        private static void RaycastComponentBolts(Ray ray, MechChassis chassis, RaycastHitResult result, ref float closestDist)
+        {
+            foreach (var comp in chassis.Components)
+            {
+                var plate = chassis.Plates.FirstOrDefault(p => p.Id == comp.SectorId);
+                if (plate == null || plate.State != PlateMountState.Detached || comp.State != ComponentMountState.Mounted) continue;
+                if (ComponentDependencySolver.GetBlockingNames(comp, chassis).Count > 0) continue;
+
+                Matrix compWorld = comp.GetWorldMatrix();
+                foreach (var bolt in comp.Fasteners)
+                {
+                    float? hit = ray.Intersects(bolt.GetBoundingSphere(compWorld));
+                    if (hit.HasValue && hit.Value < closestDist)
+                    {
+                        closestDist = hit.Value;
+                        result.HoveredBolt = bolt;
+                        result.HoveredComponent = comp;
+                        result.HitPoint = ray.Position + ray.Direction * hit.Value;
+                    }
+                }
+            }
+        }
+
+        private static void RaycastComponents(Ray ray, MechChassis chassis, RaycastHitResult result, ref float closestDist)
+        {
+            foreach (var comp in chassis.Components.OrderBy(c => c.LayerDepth))
+            {
+                var plate = chassis.Plates.FirstOrDefault(p => p.Id == comp.SectorId);
+                if (plate == null || plate.State != PlateMountState.Detached) continue;
+
+                if (comp.RayIntersects(ray, out float dist) && dist < closestDist)
+                {
+                    closestDist = dist;
+                    result.HoveredComponent = comp;
                     result.HitPoint = ray.Position + ray.Direction * dist;
                 }
             }

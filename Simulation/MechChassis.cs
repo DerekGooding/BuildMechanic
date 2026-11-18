@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using BuildMechanic.Simulation.Graph;
 
 namespace BuildMechanic.Simulation
 {
@@ -12,6 +13,7 @@ namespace BuildMechanic.Simulation
         public List<ElectricalRelay> Relays { get; set; } = new List<ElectricalRelay>();
         public List<WiringHarness> Harnesses { get; set; } = new List<WiringHarness>();
         public List<RetainingBracket> Brackets { get; set; } = new List<RetainingBracket>();
+        public List<MechComponent> Components { get; set; } = new List<MechComponent>();
 
         // 6 Modular Armor Plates across 3 Sectors
         public ArmorPlate LeftTorsoPlate { get; private set; }
@@ -104,8 +106,9 @@ namespace BuildMechanic.Simulation
                 plate.DetachGuard = p => IsWorkbenchAvailable(p);
             }
 
-            // Setup internal sub-armor hydraulics, relays, wiring harnesses, and retaining brackets
+            // Setup internal sub-armor hydraulics, relays, wiring harnesses, retaining brackets, and deep component graph
             MechChassisSubBayBuilder.PopulateSubBays(Hydraulics, Relays, Harnesses, Brackets);
+            TorsoDeepBayBuilder.PopulateLeftTorsoDeepStack(Components);
         }
 
         private ArmorPlate CreatePlate(string id, string name, Vector3 mountPos, Vector3 detachPos, Vector3 dims, float bx, float by, string prefix)
@@ -253,6 +256,12 @@ namespace BuildMechanic.Simulation
             {
                 bracket.ConfigureState(BracketState.Secured, boltsTorqued: true);
             }
+
+            foreach (var comp in Components)
+            {
+                bool faulty = comp.Id == "comp_tl_impeller" && targetSet.Contains(comp.SectorId);
+                comp.Configure(ComponentMountState.Mounted, faulty, fastenersTorqued: true);
+            }
         }
 
         public bool IsSectorSubBayNominal(string sectorId)
@@ -260,7 +269,8 @@ namespace BuildMechanic.Simulation
             return Hydraulics.Where(h => h.SectorId == sectorId).All(h => h.IsNominal)
                 && Relays.Where(r => r.SectorId == sectorId).All(r => r.IsNominal)
                 && Harnesses.Where(w => w.SectorId == sectorId).All(w => w.IsNominal)
-                && Brackets.Where(b => b.SectorId == sectorId).All(b => b.IsFullySecured);
+                && Brackets.Where(b => b.SectorId == sectorId).All(b => b.IsFullySecured)
+                && Components.Where(c => c.SectorId == sectorId).All(c => c.IsNominal);
         }
 
         public void Update(float dt)

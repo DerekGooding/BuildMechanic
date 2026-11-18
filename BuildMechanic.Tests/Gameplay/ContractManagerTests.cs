@@ -53,6 +53,8 @@ namespace BuildMechanic.Tests.Gameplay
             var harness = chassis.Harnesses.First(w => w.SectorId == "plate_torso_left" && w.State == HarnessState.Charred);
             harness.UnclipCharred();
             harness.SnapReplacement();
+            var impeller = chassis.Components.First(c => c.Id == "comp_tl_impeller");
+            impeller.ServiceOrReplace();
             Assert.True(contract.Objectives[3].Evaluate(chassis));
 
             // Step 4: Reinstall plate and torque all 24 fasteners across chassis
