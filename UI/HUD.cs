@@ -102,8 +102,8 @@ namespace BuildMechanic.UI
 
             if (!modalOpen)
             {
-                int cardW = Math.Clamp(sw / 3, 320, 440);
-                HUDTargetTelemetry.DrawTargetCard(spriteBatch, _pixel, _font, sw - cardW - 20, 42, toolManager, cardW);
+                Rectangle card = GetTargetCardBounds(sw);
+                HUDTargetTelemetry.DrawTargetCard(spriteBatch, _pixel, _font, card.X, card.Y, toolManager, card.Width);
             }
 
             HUDHotbar.Draw(spriteBatch, _pixel, _font, sw, sh, toolManager, mousePos);
@@ -126,10 +126,21 @@ namespace BuildMechanic.UI
             spriteBatch.End();
         }
 
-        private static Rectangle GetHelpButtonRect(int sw) => new Rectangle(sw - 94, 4, 78, 24);
-        private static Rectangle GetTestButtonRect(int sw) => new Rectangle(sw - 186, 4, 86, 24);
-        private static Rectangle GetShopButtonRect(int sw) => new Rectangle(sw - 278, 4, 86, 24);
-        private static Rectangle GetCatalogButtonRect(int sw) => new Rectangle(sw - 376, 4, 92, 24);
+        public static Rectangle GetHelpButtonRect(int sw) => new Rectangle(sw - 94, 4, 78, 24);
+        public static Rectangle GetTestButtonRect(int sw) => new Rectangle(sw - 186, 4, 86, 24);
+        public static Rectangle GetShopButtonRect(int sw) => new Rectangle(sw - 278, 4, 86, 24);
+        public static Rectangle GetCatalogButtonRect(int sw) => new Rectangle(sw - 376, 4, 92, 24);
+        public static Rectangle GetTargetCardBounds(int sw)
+        {
+            int cardW = Math.Clamp(sw / 3, 320, 440);
+            return new Rectangle(sw - cardW - 20, 42, cardW, 155);
+        }
+        public static Rectangle GetContractTrackerBounds(int sw, int objectiveCount)
+        {
+            int w = Math.Clamp(sw / 3, 340, 440);
+            int h = 48 + objectiveCount * 22;
+            return new Rectangle(20, 72, w, h);
+        }
 
         private void DrawTopStatusBar(SpriteBatch sb, int sw, ContractManager contractManager, Point mousePos)
         {
@@ -165,9 +176,8 @@ namespace BuildMechanic.UI
         {
             if (contractManager.ActiveContract == null) return;
             var c = contractManager.ActiveContract;
-            int x = 20, y = 72;
-            int w = Math.Clamp(sw / 3, 350, 440);
-            int h = 48 + c.Objectives.Count * 22;
+            Rectangle bounds = GetContractTrackerBounds(sw, c.Objectives.Count);
+            int x = bounds.X, y = bounds.Y, w = bounds.Width, h = bounds.Height;
 
             sb.Draw(_pixel, new Rectangle(x, y, w, h), new Color(15, 20, 25, 225));
             sb.Draw(_pixel, new Rectangle(x, y, 4, h), new Color(40, 180, 220));

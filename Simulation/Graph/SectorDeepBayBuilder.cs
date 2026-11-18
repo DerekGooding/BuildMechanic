@@ -8,21 +8,21 @@ namespace BuildMechanic.Simulation.Graph
         public static void PopulateOtherSectors(List<MechComponent> components)
         {
             // Right Torso: L2 Cowling -> L3 Gyro Cage -> L4 Carrier -> L5 Power Distribution PCB
-            AddStack(components, "rt", "plate_torso_right", new Vector3(0.48f, 3.04f, 0.415f), new Vector3(1.80f, 2.95f, 1.15f),
+            AddStack(components, "rt", "plate_torso_right", new Vector3(0.48f, 3.04f, 0.415f), new Vector3(2.38f, 2.95f, 1.15f),
                 ("cowling", "Thermal Louver Cowling", ComponentCategory.Cowling, new Vector3(0.38f, 0.14f, 0.022f), 2),
                 ("gyro", "Gyro Stabilizer Cage", ComponentCategory.GyroCage, new Vector3(0.34f, 0.13f, 0.022f), 2),
                 ("carrier", "Avionics Bus Carrier", ComponentCategory.Carrier, new Vector3(0.28f, 0.12f, 0.022f), 2),
                 ("pcb", "Power Distribution PCB", ComponentCategory.PowerPCB, new Vector3(0.18f, 0.11f, 0.026f), 0));
 
             // Left Shoulder: L2 Gimbal Collar -> L3 Rotator Gear Ring -> L4 Torque Bearing
-            AddShoulderStack(components, "sl", "plate_shoulder_left", new Vector3(-1.45f, 3.48f, 0.415f), new Vector3(-1.80f, 2.95f, 1.15f));
+            AddShoulderStack(components, "sl", "plate_shoulder_left", new Vector3(-1.45f, 3.48f, 0.415f), new Vector3(-2.38f, 2.95f, 1.15f));
             // Right Shoulder
-            AddShoulderStack(components, "sr", "plate_shoulder_right", new Vector3(1.45f, 3.48f, 0.415f), new Vector3(1.80f, 2.95f, 1.15f));
+            AddShoulderStack(components, "sr", "plate_shoulder_right", new Vector3(1.45f, 3.48f, 0.415f), new Vector3(2.38f, 2.95f, 1.15f));
 
             // Left Leg: L2 Knee Guard Shroud -> L3 Shock-Absorber Strut -> L4 Pressure Accumulator
-            AddLegStack(components, "ll", "plate_leg_left", new Vector3(-0.55f, 1.05f, 0.415f), new Vector3(-1.80f, 2.95f, 1.15f));
+            AddLegStack(components, "ll", "plate_leg_left", new Vector3(-0.55f, 1.05f, 0.415f), new Vector3(-2.38f, 2.95f, 1.15f));
             // Right Leg
-            AddLegStack(components, "lr", "plate_leg_right", new Vector3(0.55f, 1.05f, 0.415f), new Vector3(1.80f, 2.95f, 1.15f));
+            AddLegStack(components, "lr", "plate_leg_right", new Vector3(0.55f, 1.05f, 0.415f), new Vector3(2.38f, 2.95f, 1.15f));
         }
 
         private static void AddShoulderStack(List<MechComponent> components, string tag, string sectorId, Vector3 basePos, Vector3 rackPos)

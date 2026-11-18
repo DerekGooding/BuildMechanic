@@ -47,12 +47,12 @@ namespace BuildMechanic.Simulation
                 new Vector3(0.66f, 0.98f, 0.35f), new Vector3(0.44f, 0.72f, 0.35f));
 
             brackets.Clear();
-            brackets.Add(CreateBracket("bracket_tl", "plate_torso_left", new Vector3(-0.48f, 2.70f, 0.405f), new Vector3(-1.80f, 2.55f, 1.15f), new Vector3(0.48f, 0.34f, 0.025f)));
-            brackets.Add(CreateBracket("bracket_tr", "plate_torso_right", new Vector3(0.48f, 2.70f, 0.405f), new Vector3(1.80f, 2.55f, 1.15f), new Vector3(0.48f, 0.34f, 0.025f)));
-            brackets.Add(CreateBracket("bracket_sl", "plate_shoulder_left", new Vector3(-1.45f, 3.35f, 0.405f), new Vector3(-1.80f, 2.55f, 1.15f), new Vector3(0.42f, 0.24f, 0.025f)));
-            brackets.Add(CreateBracket("bracket_sr", "plate_shoulder_right", new Vector3(1.45f, 3.35f, 0.405f), new Vector3(1.80f, 2.55f, 1.15f), new Vector3(0.42f, 0.24f, 0.025f)));
-            brackets.Add(CreateBracket("bracket_ll", "plate_leg_left", new Vector3(-0.55f, 0.85f, 0.405f), new Vector3(-1.80f, 2.55f, 1.15f), new Vector3(0.32f, 0.38f, 0.025f)));
-            brackets.Add(CreateBracket("bracket_lr", "plate_leg_right", new Vector3(0.55f, 0.85f, 0.405f), new Vector3(1.80f, 2.55f, 1.15f), new Vector3(0.32f, 0.38f, 0.025f)));
+            brackets.Add(CreateBracket("bracket_tl", "plate_torso_left", new Vector3(-0.48f, 2.70f, 0.405f), new Vector3(-2.38f, 1.60f, 1.15f), new Vector3(0.48f, 0.34f, 0.025f)));
+            brackets.Add(CreateBracket("bracket_tr", "plate_torso_right", new Vector3(0.48f, 2.70f, 0.405f), new Vector3(2.38f, 1.60f, 1.15f), new Vector3(0.48f, 0.34f, 0.025f)));
+            brackets.Add(CreateBracket("bracket_sl", "plate_shoulder_left", new Vector3(-1.45f, 3.35f, 0.405f), new Vector3(-2.38f, 1.60f, 1.15f), new Vector3(0.42f, 0.24f, 0.025f)));
+            brackets.Add(CreateBracket("bracket_sr", "plate_shoulder_right", new Vector3(1.45f, 3.35f, 0.405f), new Vector3(2.38f, 1.60f, 1.15f), new Vector3(0.42f, 0.24f, 0.025f)));
+            brackets.Add(CreateBracket("bracket_ll", "plate_leg_left", new Vector3(-0.55f, 0.85f, 0.405f), new Vector3(-2.38f, 1.60f, 1.15f), new Vector3(0.32f, 0.38f, 0.025f)));
+            brackets.Add(CreateBracket("bracket_lr", "plate_leg_right", new Vector3(0.55f, 0.85f, 0.405f), new Vector3(2.38f, 1.60f, 1.15f), new Vector3(0.32f, 0.38f, 0.025f)));
         }
 
         private static void AddSectorHarness(

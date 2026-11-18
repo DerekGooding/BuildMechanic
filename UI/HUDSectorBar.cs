@@ -56,11 +56,16 @@ namespace BuildMechanic.UI
             }
         }
 
-        public static void DrawHelpDrawer(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int sw, int sh)
+        public static Rectangle GetHelpDrawerBounds(int sw, int sh)
         {
             int w = 310, h = 152;
-            int x = sw - w - 20;
-            int y = sh - 60 - h - 10;
+            return new Rectangle(sw - w - 20, sh - 60 - h - 10, w, h);
+        }
+
+        public static void DrawHelpDrawer(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int sw, int sh)
+        {
+            Rectangle r = GetHelpDrawerBounds(sw, sh);
+            int x = r.X, y = r.Y, w = r.Width, h = r.Height;
 
             sb.Draw(pixel, new Rectangle(x, y, w, h), new Color(12, 16, 22, 235));
             sb.Draw(pixel, new Rectangle(x, y, 3, h), Color.Cyan);
