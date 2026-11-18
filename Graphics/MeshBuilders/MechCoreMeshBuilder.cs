@@ -141,6 +141,23 @@ namespace BuildMechanic.Graphics.MeshBuilders
                 }
             }
 
+            // 3. Lateral Cooling Louver Ribs along Spine Flanks
+            for (int side = 0; side < 2; side++)
+            {
+                float s = side == 0 ? -1f : 1f;
+                for (int r = 0; r < 4; r++)
+                {
+                    float ry = -hh * 0.55f + r * 0.24f;
+                    float rx = s * (hw * 0.92f);
+                    Vector3 lc = new Vector3(rx, ry, 0.05f);
+                    Vector3 l0 = lc + new Vector3(-0.025f, -0.04f, -0.18f);
+                    Vector3 l1 = lc + new Vector3(0.025f, -0.04f, -0.18f);
+                    Vector3 l2 = lc + new Vector3(0.025f, 0.04f, 0.18f);
+                    Vector3 l3 = lc + new Vector3(-0.025f, 0.04f, 0.18f);
+                    AddQuad(l0, l1, l2, l3, new Vector3(s, 0.2f, 0));
+                }
+            }
+
             return BuildMesh(device, vertices, indices);
         }
 

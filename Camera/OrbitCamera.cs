@@ -43,50 +43,54 @@ namespace BuildMechanic.Camera
             _desiredPitch = Math.Clamp(pitch, -1.4f, 1.4f);
         }
 
-        public void Update(GameTime gameTime, Viewport viewport)
+        public void Update(GameTime gameTime, Viewport viewport, bool blockInput = false)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             MouseState mouse = Mouse.GetState();
             KeyboardState kbd = Keyboard.GetState();
 
-            // Right Click Drag = Orbit
-            if (mouse.RightButton == ButtonState.Pressed && _prevMouse.RightButton == ButtonState.Pressed)
+            if (!blockInput)
             {
-                float dx = mouse.X - _prevMouse.X;
-                float dy = mouse.Y - _prevMouse.Y;
-
-                if (kbd.IsKeyDown(Keys.LeftShift) || kbd.IsKeyDown(Keys.RightShift))
+                // Right Click Drag = Orbit
+                if (mouse.RightButton == ButtonState.Pressed && _prevMouse.RightButton == ButtonState.Pressed)
                 {
-                    // Shift + Right Click = Pan
+                    float dx = mouse.X - _prevMouse.X;
+                    float dy = mouse.Y - _prevMouse.Y;
+
+                    if (kbd.IsKeyDown(Keys.LeftShift) || kbd.IsKeyDown(Keys.RightShift))
+                    {
+                        // Shift + Right Click = Pan
+                        Matrix camRot = Matrix.CreateRotationY(Yaw);
+                        Vector3 right = camRot.Right;
+                        Vector3 up = Vector3.Up;
+                        _desiredTarget += (-right * dx * 0.004f * Distance) + (up * dy * 0.004f * Distance);
+                    }
+                    else
+                    {
+                        // Orbit
+                        _desiredYaw += dx * 0.006f;
+                        _desiredPitch = Math.Clamp(_desiredPitch - dy * 0.006f, -1.4f, 1.4f);
+                    }
+                }
+
+                // Middle Click Drag = Pan
+                if (mouse.MiddleButton == ButtonState.Pressed && _prevMouse.MiddleButton == ButtonState.Pressed)
+                {
+                    float dx = mouse.X - _prevMouse.X;
+                    float dy = mouse.Y - _prevMouse.Y;
                     Matrix camRot = Matrix.CreateRotationY(Yaw);
                     Vector3 right = camRot.Right;
                     Vector3 up = Vector3.Up;
                     _desiredTarget += (-right * dx * 0.004f * Distance) + (up * dy * 0.004f * Distance);
                 }
-                else
+
+                // Scroll Wheel = Zoom (skip when Ctrl is held for tool cycling)
+                bool ctrlHeld = kbd.IsKeyDown(Keys.LeftControl) || kbd.IsKeyDown(Keys.RightControl);
+                int scrollDelta = mouse.ScrollWheelValue - _prevScroll;
+                if (!ctrlHeld && scrollDelta != 0)
                 {
-                    // Orbit
-                    _desiredYaw += dx * 0.006f;
-                    _desiredPitch = Math.Clamp(_desiredPitch - dy * 0.006f, -1.4f, 1.4f);
+                    _desiredDistance = Math.Clamp(_desiredDistance - (scrollDelta * 0.002f), 1.2f, 12f);
                 }
-            }
-
-            // Middle Click Drag = Pan
-            if (mouse.MiddleButton == ButtonState.Pressed && _prevMouse.MiddleButton == ButtonState.Pressed)
-            {
-                float dx = mouse.X - _prevMouse.X;
-                float dy = mouse.Y - _prevMouse.Y;
-                Matrix camRot = Matrix.CreateRotationY(Yaw);
-                Vector3 right = camRot.Right;
-                Vector3 up = Vector3.Up;
-                _desiredTarget += (-right * dx * 0.004f * Distance) + (up * dy * 0.004f * Distance);
-            }
-
-            // Scroll Wheel = Zoom
-            int scrollDelta = mouse.ScrollWheelValue - _prevScroll;
-            if (scrollDelta != 0)
-            {
-                _desiredDistance = Math.Clamp(_desiredDistance - (scrollDelta * 0.002f), 1.2f, 12f);
             }
             _prevScroll = mouse.ScrollWheelValue;
             _prevMouse = mouse;

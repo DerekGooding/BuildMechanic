@@ -10,6 +10,8 @@ namespace BuildMechanic.Simulation
         public List<ArmorPlate> Plates { get; set; } = new List<ArmorPlate>();
         public List<HydraulicCylinder> Hydraulics { get; set; } = new List<HydraulicCylinder>();
         public List<ElectricalRelay> Relays { get; set; } = new List<ElectricalRelay>();
+        public List<WiringHarness> Harnesses { get; set; } = new List<WiringHarness>();
+        public List<RetainingBracket> Brackets { get; set; } = new List<RetainingBracket>();
 
         // 6 Modular Armor Plates across 3 Sectors
         public ArmorPlate LeftTorsoPlate { get; private set; }
@@ -102,21 +104,8 @@ namespace BuildMechanic.Simulation
                 plate.DetachGuard = p => IsWorkbenchAvailable(p);
             }
 
-            // Setup internal sub-armor hydraulic cylinders
-            Hydraulics.Clear();
-            Hydraulics.Add(new HydraulicCylinder { Id = "hydro_torso_left", SectorId = "plate_torso_left", Position = new Vector3(-0.45f, 2.70f, 0.35f) });
-            Hydraulics.Add(new HydraulicCylinder { Id = "hydro_torso_right", SectorId = "plate_torso_right", Position = new Vector3(0.45f, 2.70f, 0.35f) });
-            Hydraulics.Add(new HydraulicCylinder { Id = "hydro_leg_left", SectorId = "plate_leg_left", Position = new Vector3(-0.55f, 0.85f, 0.35f) });
-            Hydraulics.Add(new HydraulicCylinder { Id = "hydro_leg_right", SectorId = "plate_leg_right", Position = new Vector3(0.55f, 0.85f, 0.35f) });
-
-            // Setup internal electrical relay fuse boxes
-            Relays.Clear();
-            Relays.Add(new ElectricalRelay { Id = "relay_tl_1", SectorId = "plate_torso_left", SlotIndex = 1, Position = new Vector3(-0.25f, 2.85f, 0.36f) });
-            Relays.Add(new ElectricalRelay { Id = "relay_tl_2", SectorId = "plate_torso_left", SlotIndex = 2, Position = new Vector3(-0.25f, 2.70f, 0.36f) });
-            Relays.Add(new ElectricalRelay { Id = "relay_tr_1", SectorId = "plate_torso_right", SlotIndex = 1, Position = new Vector3(0.25f, 2.85f, 0.36f) });
-            Relays.Add(new ElectricalRelay { Id = "relay_tr_2", SectorId = "plate_torso_right", SlotIndex = 2, Position = new Vector3(0.25f, 2.70f, 0.36f) });
-            Relays.Add(new ElectricalRelay { Id = "relay_sl_1", SectorId = "plate_shoulder_left", SlotIndex = 1, Position = new Vector3(-1.35f, 3.35f, 0.36f) });
-            Relays.Add(new ElectricalRelay { Id = "relay_sr_1", SectorId = "plate_shoulder_right", SlotIndex = 1, Position = new Vector3(1.35f, 3.35f, 0.36f) });
+            // Setup internal sub-armor hydraulics, relays, wiring harnesses, and retaining brackets
+            MechChassisSubBayBuilder.PopulateSubBays(Hydraulics, Relays, Harnesses, Brackets);
         }
 
         private ArmorPlate CreatePlate(string id, string name, Vector3 mountPos, Vector3 detachPos, Vector3 dims, float bx, float by, string prefix)
@@ -253,6 +242,25 @@ namespace BuildMechanic.Simulation
                     relay.ConfigureFault(blown: false, resistance: 0.45f);
                 }
             }
+
+            foreach (var harness in Harnesses)
+            {
+                bool isFirstInSector = harness.Id.EndsWith("_pwr") || harness.Id.EndsWith("_sen");
+                harness.ConfigureFault(charred: targetSet.Contains(harness.SectorId) && isFirstInSector);
+            }
+
+            foreach (var bracket in Brackets)
+            {
+                bracket.ConfigureState(BracketState.Secured, boltsTorqued: true);
+            }
+        }
+
+        public bool IsSectorSubBayNominal(string sectorId)
+        {
+            return Hydraulics.Where(h => h.SectorId == sectorId).All(h => h.IsNominal)
+                && Relays.Where(r => r.SectorId == sectorId).All(r => r.IsNominal)
+                && Harnesses.Where(w => w.SectorId == sectorId).All(w => w.IsNominal)
+                && Brackets.Where(b => b.SectorId == sectorId).All(b => b.IsFullySecured);
         }
 
         public void Update(float dt)

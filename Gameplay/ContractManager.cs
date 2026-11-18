@@ -201,6 +201,13 @@ namespace BuildMechanic.Gameplay
                         return p != null && p.Cracks.All(cr => cr.Stage == CrackStage.FlushFinished);
                     }
                 });
+
+                objectives.Add(new ContractObjective
+                {
+                    Description = $"Service {shortName} bay (Harness/Hydraulics/Bracket)",
+                    LatchOnceDone = false,
+                    Condition = c => c.IsSectorSubBayNominal(pid)
+                });
             }
 
             // Final objective: All plates mounted and all 24 bolts torqued

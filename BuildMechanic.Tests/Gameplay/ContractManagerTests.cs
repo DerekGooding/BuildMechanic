@@ -19,7 +19,7 @@ namespace BuildMechanic.Tests.Gameplay
 
             var contract = manager.ActiveContract;
             Assert.NotNull(contract);
-            Assert.Equal(4, contract.Objectives.Count);
+            Assert.Equal(5, contract.Objectives.Count);
             Assert.False(manager.IsFinished);
 
             // Step 1: Unscrew & Detach Left Breastplate
@@ -44,6 +44,17 @@ namespace BuildMechanic.Tests.Gameplay
             Assert.True(contract.Objectives[2].Evaluate(chassis));
             Assert.True(contract.Objectives[2].IsLatched);
 
+            // Step 3.5: Service Left Torso sub-bay (Hydraulics, Relay, Wiring Harness, Bracket)
+            var hydro = chassis.Hydraulics.First(h => h.SectorId == "plate_torso_left");
+            hydro.BleedAir(1.0f);
+            hydro.FlushFluid(3.0f);
+            var relay = chassis.Relays.First(r => r.SectorId == "plate_torso_left" && r.IsBlown);
+            relay.ReplaceFuse();
+            var harness = chassis.Harnesses.First(w => w.SectorId == "plate_torso_left" && w.State == HarnessState.Charred);
+            harness.UnclipCharred();
+            harness.SnapReplacement();
+            Assert.True(contract.Objectives[3].Evaluate(chassis));
+
             // Step 4: Reinstall plate and torque all 24 fasteners across chassis
             chassis.LeftTorsoPlate.ToggleMount();
             chassis.LeftTorsoPlate.Update(5.0f);
@@ -55,8 +66,8 @@ namespace BuildMechanic.Tests.Gameplay
             }
             Assert.True(chassis.LeftTorsoPlate.AllBoltsTorqued);
 
-            // Objective 4 should now be met
-            Assert.True(contract.Objectives[3].Evaluate(chassis));
+            // Objective 4 (final plate reinstall) should now be met
+            Assert.True(contract.Objectives[4].Evaluate(chassis));
 
             // CRITICAL TEST: Objectives 0, 1, 2 must remain true because they latched!
             Assert.True(contract.Objectives[0].Evaluate(chassis), "Objective 0 un-latched when re-bolted!");

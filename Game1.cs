@@ -31,6 +31,7 @@ namespace BuildMechanic
         private HUD _hud;
 
         private KeyboardState _prevKeyboard;
+        private MouseState _prevMouse;
         private int _sectorIndex = 0;
 
         public Game1()
@@ -157,8 +158,14 @@ namespace BuildMechanic
                     }
                 }
 
+                if (kbd.IsKeyDown(Keys.H) && _prevKeyboard.IsKeyUp(Keys.H))
+                    _hud.ShowHelpDrawer = !_hud.ShowHelpDrawer;
+
                 if (kbd.IsKeyDown(Keys.Space) && _prevKeyboard.IsKeyUp(Keys.Space))
+                {
+                    _hud.ActiveSectorIndex = 5;
                     _camera.FocusSector(new Vector3(0, 2.6f, 0.50f), 4.5f, 0.0f, 0.15f);
+                }
 
                 if (kbd.IsKeyDown(Keys.T) && _prevKeyboard.IsKeyUp(Keys.T))
                     _proving.TriggerTest(_chassis);
@@ -186,15 +193,27 @@ namespace BuildMechanic
                     }
                     catch { /* Ignore launch exception in headless or sandbox environments */ }
                 }
-
-                _camera.Update(gameTime, GraphicsDevice.Viewport);
             }
+
+            int sw = GraphicsDevice.Viewport.Width;
+            int sh = GraphicsDevice.Viewport.Height;
+            bool overHud = _hud.IsPointerOverHUD(mouse.Position, sw, sh);
+            bool justClicked = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released;
+
+            if (!_toolManager.IsShopOpen && justClicked && overHud)
+            {
+                _hud.HandleClick(mouse.Position, sw, sh, _toolManager, _camera, _proving, _chassis);
+            }
+
+            bool blockCam = _toolManager.IsShopOpen || overHud || _proving.CurrentStage == ProvingStage.TelemetryVerdict;
+            _camera.Update(gameTime, GraphicsDevice.Viewport, blockCam);
 
             // Get 3D ray under mouse cursor
             Ray mouseRay = _camera.GetMouseRay(mouse.Position, GraphicsDevice.Viewport);
 
             // Update tool system & interactions
-            _toolManager.Update(gameTime, mouseRay, _chassis, _vfx, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+            _toolManager.IsMouseOverUI = overHud;
+            _toolManager.Update(gameTime, mouseRay, _chassis, _vfx, sw, sh);
 
             // Update physics & chassis parts
             _chassis.Update(dt);
@@ -209,6 +228,7 @@ namespace BuildMechanic
             _contractManager.Update(_chassis);
 
             _prevKeyboard = kbd;
+            _prevMouse = mouse;
             base.Update(gameTime);
         }
 

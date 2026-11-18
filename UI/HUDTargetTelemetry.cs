@@ -18,10 +18,13 @@ namespace BuildMechanic.UI
                                 (tools.HoveredCrack != null ? Color.OrangeRed :
                                 (tools.HoveredHydraulic != null ? Color.DeepSkyBlue :
                                 (tools.HoveredRelay != null ? Color.Magenta :
-                                (tools.HoveredPlate != null ? Color.Cyan : Color.White * 0.75f))));
+                                (tools.HoveredHarness != null ? Color.Orange :
+                                (tools.HoveredBracket != null ? Color.LightSkyBlue :
+                                (tools.HoveredPlate != null ? Color.Cyan : Color.White * 0.75f))))));
 
             bool hasTarget = tools.HoveredBolt != null || tools.HoveredCrack != null ||
                              tools.HoveredHydraulic != null || tools.HoveredRelay != null ||
+                             tools.HoveredHarness != null || tools.HoveredBracket != null ||
                              tools.HoveredPlate != null;
 
             int len = 8, gap = 4, thick = 2;
@@ -51,15 +54,47 @@ namespace BuildMechanic.UI
                 sb.Draw(pixel, new Rectangle(cx + bOffset - bSize, cy + bOffset - 2, bSize, 2), bCol);
                 sb.Draw(pixel, new Rectangle(cx + bOffset - 2, cy + bOffset - bSize, 2, bSize), bCol);
             }
+
+            string hint = GetReticleHint(tools);
+            if (!string.IsNullOrEmpty(hint))
+            {
+                float hw = ProceduralFont.CalculateStringWidth(hint, 1.0f);
+                sb.Draw(pixel, new Rectangle(cx - (int)(hw * 0.5f) - 6, cy + 24, (int)hw + 12, 18), new Color(10, 14, 20, 200));
+                font.DrawString(sb, hint, new Vector2(cx - hw * 0.5f, cy + 27), reticleColor, 1.0f);
+            }
+        }
+
+        private static string GetReticleHint(ToolManager tools)
+        {
+            if (tools.ActiveTool == ToolType.ImpactDriver)
+            {
+                string mode = tools.DriverDir == DriverDirection.Forward ? "FWD TORQUE" : "REV UNSCREW";
+                if (tools.HoveredBolt != null) return $"[LMB] {mode} | [R] FLIP";
+                return $"DRV: {mode} [R]";
+            }
+            if (tools.HoveredHarness != null)
+            {
+                if (tools.HoveredHarness.State == HarnessState.Charred) return "[3:PRY] UNCLIP CHARRED HARNESS";
+                if (tools.HoveredHarness.State == HarnessState.Unclipped) return "[3:PRY] SNAP NEW HARNESS";
+                return "[6:METER] PROBE BUS";
+            }
+            if (tools.HoveredBracket != null)
+            {
+                if (tools.HoveredBracket.State == BracketState.Secured)
+                    return tools.HoveredBracket.CanRemove ? "[3:PRY] REMOVE SHROUD" : "[2:DRV REV] UNBOLT SHROUD";
+                return "[3:PRY] RE-SEAT SHROUD";
+            }
+            return null;
         }
 
         public static void DrawTargetCard(
             SpriteBatch sb, Texture2D pixel, ProceduralFont font,
-            int x, int y, ToolManager tools)
+            int x, int y, ToolManager tools, int cardW = 420)
         {
-            int w = 450;
+            int w = cardW;
             if (tools.HoveredPlate == null && tools.HoveredBolt == null && tools.HoveredCrack == null &&
-                tools.HoveredHydraulic == null && tools.HoveredRelay == null) return;
+                tools.HoveredHydraulic == null && tools.HoveredRelay == null &&
+                tools.HoveredHarness == null && tools.HoveredBracket == null) return;
 
             int h = 155;
             sb.Draw(pixel, new Rectangle(x, y, w, h), new Color(16, 20, 26, 240));
@@ -70,12 +105,42 @@ namespace BuildMechanic.UI
                 DrawHydraulicTelemetry(sb, pixel, font, x, y, w, tools.HoveredHydraulic);
             else if (tools.HoveredRelay != null)
                 DrawRelayTelemetry(sb, pixel, font, x, y, w, tools.HoveredRelay);
+            else if (tools.HoveredHarness != null)
+                DrawHarnessTelemetry(sb, pixel, font, x, y, w, tools.HoveredHarness);
+            else if (tools.HoveredBracket != null)
+                DrawBracketTelemetry(sb, pixel, font, x, y, w, tools.HoveredBracket);
             else if (tools.HoveredBolt != null)
                 DrawFastenerTelemetry(sb, pixel, font, x, y, w, tools.HoveredBolt);
             else if (tools.HoveredCrack != null)
                 DrawCrackTelemetry(sb, pixel, font, x, y, w, tools.HoveredCrack, tools.HoveredPlate);
             else if (tools.HoveredPlate != null)
                 DrawPlateTelemetry(sb, pixel, font, x, y, w, tools.HoveredPlate, tools);
+        }
+
+        private static void DrawHarnessTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, WiringHarness h)
+        {
+            font.DrawString(sb, $"WIRING HARNESS: {h.BusLabel}", new Vector2(x + 14, y + 12), Color.Orange, 1.45f);
+            string st = h.State switch
+            {
+                HarnessState.Charred => "CHARRED / SHORTED [3: PRY TO UNCLIP]",
+                HarnessState.Unclipped => "BAY OPEN [3: PRY TO SNAP NEW HARNESS]",
+                _ => h.IsProbed ? "CONTINUITY VERIFIED (0.2 OHM)" : "NOMINAL [6: METER TO PROBE]"
+            };
+            Color col = h.State == HarnessState.Nominal ? Color.LimeGreen : (h.State == HarnessState.Unclipped ? Color.Cyan : Color.Tomato);
+            font.DrawString(sb, $"STATUS: {st}", new Vector2(x + 14, y + 40), col, 1.20f);
+            font.DrawString(sb, $"HARNESS ID: {h.Id.ToUpper()}", new Vector2(x + 14, y + 66), Color.Silver, 1.15f);
+        }
+
+        private static void DrawBracketTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, RetainingBracket b)
+        {
+            font.DrawString(sb, "INTERNAL RETAINING SHROUD", new Vector2(x + 14, y + 12), Color.LightSkyBlue, 1.45f);
+            int torqued = b.Bolts.Count(bt => bt.IsTorqued);
+            string st = b.State == BracketState.Removed
+                ? "REMOVED ON TRAY [3: PRY TO RE-SEAT]"
+                : (b.CanRemove ? "BOLTS FREE [3: PRY TO REMOVE SHROUD]" : $"SECURED ({torqued}/{b.Bolts.Count} BOLTS) [2: DRV]");
+            Color col = b.IsFullySecured ? Color.LimeGreen : (b.CanRemove ? Color.Yellow : Color.Orange);
+            font.DrawString(sb, $"STATUS: {st}", new Vector2(x + 14, y + 40), col, 1.20f);
+            font.DrawString(sb, "SHIELDING HYDRAULIC MANIFOLD & WIRING BUS", new Vector2(x + 14, y + 66), Color.DarkGray, 1.10f);
         }
 
         private static void DrawHydraulicTelemetry(SpriteBatch sb, Texture2D pixel, ProceduralFont font, int x, int y, int w, HydraulicCylinder hyl)

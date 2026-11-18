@@ -2,7 +2,6 @@ using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using BuildMechanic.Audio;
-using BuildMechanic.Gameplay;
 using BuildMechanic.Graphics;
 using BuildMechanic.Simulation;
 using BuildMechanic.UI;
@@ -31,8 +30,10 @@ namespace BuildMechanic.Tools
     public class ToolManager
     {
         public ToolType ActiveTool { get; private set; } = ToolType.Scanner;
+        public ToolType PreviousWorkTool { get; private set; } = ToolType.ImpactDriver;
         public DriverDirection DriverDir { get; private set; } = DriverDirection.Reverse;
         public bool IsShopOpen { get; set; } = false;
+        public bool IsMouseOverUI { get; set; } = false;
         public int ActiveColorIndex { get; private set; } = 1; // Default: Military Olive
 
         // Hovered Targets
@@ -41,6 +42,8 @@ namespace BuildMechanic.Tools
         public CrackSegment HoveredCrack { get; private set; }
         public HydraulicCylinder HoveredHydraulic { get; private set; }
         public ElectricalRelay HoveredRelay { get; private set; }
+        public WiringHarness HoveredHarness { get; private set; }
+        public RetainingBracket HoveredBracket { get; private set; }
         public Vector3 HitPoint { get; private set; }
 
         public bool IsOperating { get; private set; }
@@ -50,11 +53,16 @@ namespace BuildMechanic.Tools
         private readonly Random _rng = new Random();
         private KeyboardState _prevKbd;
         private MouseState _prevMouse;
+        private int _prevScroll;
 
         public void SelectTool(ToolType tool)
         {
             if (ActiveTool != tool)
             {
+                if (ActiveTool != ToolType.Scanner)
+                {
+                    PreviousWorkTool = ActiveTool;
+                }
                 StopOperations();
                 ActiveTool = tool;
                 if (tool == ToolType.Scanner)
@@ -62,6 +70,14 @@ namespace BuildMechanic.Tools
                     AudioManager.Instance?.PlayScannerPing();
                 }
             }
+        }
+
+        public void CycleTool(int delta)
+        {
+            int count = 8;
+            int current = (int)ActiveTool - 1;
+            int next = ((current + delta) % count + count) % count;
+            SelectTool((ToolType)(next + 1));
         }
 
         public void ToggleDriverDirection()
@@ -101,7 +117,6 @@ namespace BuildMechanic.Tools
             KeyboardState kbd = Keyboard.GetState();
             MouseState mouse = Mouse.GetState();
 
-            // Shop hotkey toggle
             if (kbd.IsKeyDown(Keys.U) && _prevKbd.IsKeyUp(Keys.U))
             {
                 IsShopOpen = !IsShopOpen;
@@ -114,10 +129,11 @@ namespace BuildMechanic.Tools
                 if (closeRequested) IsShopOpen = false;
                 _prevKbd = kbd;
                 _prevMouse = mouse;
+                _prevScroll = mouse.ScrollWheelValue;
                 return;
             }
 
-            // Hotkeys 1-8
+            // Direct tool hotkeys 1-8
             if (kbd.IsKeyDown(Keys.D1)) SelectTool(ToolType.Scanner);
             if (kbd.IsKeyDown(Keys.D2)) SelectTool(ToolType.ImpactDriver);
             if (kbd.IsKeyDown(Keys.D3)) SelectTool(ToolType.PryBar);
@@ -127,8 +143,19 @@ namespace BuildMechanic.Tools
             if (kbd.IsKeyDown(Keys.D7)) SelectTool(ToolType.HydraulicBleeder);
             if (kbd.IsKeyDown(Keys.D8)) SelectTool(ToolType.PaintGun);
 
+            // Q / E and Ctrl + Scroll tool cycling
+            if (kbd.IsKeyDown(Keys.Q) && _prevKbd.IsKeyUp(Keys.Q)) CycleTool(-1);
+            if (kbd.IsKeyDown(Keys.E) && _prevKbd.IsKeyUp(Keys.E)) CycleTool(1);
+            int scrollDelta = mouse.ScrollWheelValue - _prevScroll;
+            bool ctrlHeld = kbd.IsKeyDown(Keys.LeftControl) || kbd.IsKeyDown(Keys.RightControl);
+            if (ctrlHeld && scrollDelta != 0)
+            {
+                CycleTool(scrollDelta > 0 ? -1 : 1);
+            }
+            _prevScroll = mouse.ScrollWheelValue;
+
             if (kbd.IsKeyDown(Keys.Tab) && _prevKbd.IsKeyUp(Keys.Tab))
-                SelectTool(ActiveTool == ToolType.Scanner ? ToolType.ImpactDriver : ToolType.Scanner);
+                SelectTool(ActiveTool == ToolType.Scanner ? PreviousWorkTool : ToolType.Scanner);
 
             if (kbd.IsKeyDown(Keys.R) && _prevKbd.IsKeyUp(Keys.R))
                 ToggleDriverDirection();
@@ -136,145 +163,53 @@ namespace BuildMechanic.Tools
             if (kbd.IsKeyDown(Keys.P) && _prevKbd.IsKeyUp(Keys.P))
                 CyclePaintColor();
 
-            // Raycast detection
+            // Raycast detection (suppressed when pointer is over UI)
+            if (IsMouseOverUI)
+            {
+                ClearHover();
+                StopOperations();
+                _prevKbd = kbd;
+                _prevMouse = mouse;
+                return;
+            }
+
             var hit = ToolRaycaster.PerformRaycast(ray, chassis, ActiveTool);
             HoveredPlate = hit.HoveredPlate;
             HoveredBolt = hit.HoveredBolt;
             HoveredCrack = hit.HoveredCrack;
             HoveredHydraulic = hit.HoveredHydraulic;
             HoveredRelay = hit.HoveredRelay;
+            HoveredHarness = hit.HoveredHarness;
+            HoveredBracket = hit.HoveredBracket;
             HitPoint = hit.HitPoint;
 
-            bool isLeftMouseDown = mouse.LeftButton == ButtonState.Pressed;
-            bool wasLeftMouseDown = _prevMouse.LeftButton == ButtonState.Pressed;
-            bool justClicked = isLeftMouseDown && !wasLeftMouseDown;
-            bool isRightClicked = mouse.RightButton == ButtonState.Pressed && _prevMouse.RightButton == ButtonState.Released;
+            bool isLmb = mouse.LeftButton == ButtonState.Pressed;
+            bool justClicked = isLmb && _prevMouse.LeftButton == ButtonState.Released;
+            bool isRmb = mouse.RightButton == ButtonState.Pressed && _prevMouse.RightButton == ButtonState.Released;
 
-            IsOperating = false;
-            ArcFlickerIntensity = 0f;
-            PryImpulse = Math.Max(0f, PryImpulse - dt * 4.5f);
+            float pry = Math.Max(0f, PryImpulse - dt * 4.5f);
+            ToolExecutionHelper.Execute(
+                this, dt, isLmb, justClicked, isRmb, _rng,
+                sparks, smoke, fluid, aerosol,
+                out bool operating, out float arc, ref pry);
 
-            ExecuteActiveTool(dt, isLeftMouseDown, justClicked, isRightClicked, sparks, smoke, fluid, aerosol);
+            IsOperating = operating;
+            ArcFlickerIntensity = arc;
+            PryImpulse = pry;
 
             _prevKbd = kbd;
             _prevMouse = mouse;
         }
 
-        private void ExecuteActiveTool(
-            float dt, bool isLmb, bool justClicked, bool isRmb,
-            SparkParticleSystem sparks, SmokeParticleSystem smoke,
-            FluidParticleSystem fluid, AerosolParticleSystem aerosol)
+        private void ClearHover()
         {
-            switch (ActiveTool)
-            {
-                case ToolType.Scanner:
-                    if (justClicked && HoveredPlate != null) AudioManager.Instance?.PlayScannerPing();
-                    break;
-
-                case ToolType.ImpactDriver:
-                    if (isLmb && HoveredBolt != null && (HoveredPlate == null || HoveredPlate.State == PlateMountState.Mounted))
-                    {
-                        IsOperating = true;
-                        AudioManager.Instance?.PlayDriverLoop(true);
-                        float speedMult = UpgradeManager.Instance?.GetDriverSpeed() ?? 1.0f;
-                        float speed = ((DriverDir == DriverDirection.Forward) ? 1.4f : -1.4f) * speedMult;
-                        if (HoveredBolt.Drive(speed * dt) != 0) AudioManager.Instance?.PlayTorqueClick();
-                    }
-                    else AudioManager.Instance?.PlayDriverLoop(false);
-                    break;
-
-                case ToolType.PryBar:
-                    if (justClicked && HoveredPlate != null)
-                    {
-                        PryImpulse = 1.0f;
-                        if (HoveredPlate.State == PlateMountState.Mounted && HoveredPlate.CanDetach)
-                        {
-                            HoveredPlate.ToggleMount();
-                            AudioManager.Instance?.PlayPlateDetach();
-                            AudioManager.Instance?.PlayCraneEcho();
-                        }
-                        else if (HoveredPlate.State == PlateMountState.Mounted && !HoveredPlate.CanDetach)
-                        {
-                            AudioManager.Instance?.PlayTorqueClick();
-                        }
-                        else if (HoveredPlate.State == PlateMountState.Detached)
-                        {
-                            HoveredPlate.ToggleMount();
-                            AudioManager.Instance?.PlayPlateMount();
-                            AudioManager.Instance?.PlayCraneEcho();
-                        }
-                    }
-                    break;
-
-                case ToolType.AngleGrinder:
-                    if (isLmb && CanRepairCrack(HoveredCrack, HoveredPlate, ToolType.AngleGrinder))
-                    {
-                        IsOperating = true;
-                        AudioManager.Instance?.PlayGrinderLoop(true);
-                        sparks?.Emit(HitPoint, Vector3.Right, 6);
-                        float grindMult = UpgradeManager.Instance?.GetGrinderSpeed() ?? 1.0f;
-                        if (HoveredCrack.ApplyGrinding(dt * 0.45f * grindMult) && HoveredCrack.IsRepaired)
-                            AudioManager.Instance?.PlayScannerPing();
-                    }
-                    else AudioManager.Instance?.PlayGrinderLoop(false);
-                    break;
-
-                case ToolType.Welder:
-                    if (isLmb && CanRepairCrack(HoveredCrack, HoveredPlate, ToolType.Welder))
-                    {
-                        IsOperating = true;
-                        AudioManager.Instance?.PlayWelderLoop(true);
-                        ArcFlickerIntensity = (float)_rng.NextDouble() * 0.4f + 0.6f;
-                        sparks?.Emit(HitPoint, Vector3.Up, 1);
-                        smoke?.Emit(HitPoint, 1);
-                        float weldMult = UpgradeManager.Instance?.GetWelderSpeed() ?? 1.0f;
-                        if (HoveredCrack.ApplyWelding(dt * 0.35f * weldMult))
-                        {
-                            AudioManager.Instance?.PlayScannerPing();
-                            AudioManager.Instance?.PlayPurgeHiss();
-                        }
-                    }
-                    else AudioManager.Instance?.PlayWelderLoop(false);
-                    break;
-
-                case ToolType.Multimeter:
-                    if ((justClicked || isRmb) && HoveredRelay != null)
-                    {
-                        if (HoveredRelay.IsBlown)
-                        {
-                            HoveredRelay.ReplaceFuse();
-                            AudioManager.Instance?.PlayTorqueClick();
-                        }
-                        else
-                        {
-                            HoveredRelay.TestContinuity();
-                            AudioManager.Instance?.PlayMultimeterBeep();
-                        }
-                    }
-                    break;
-
-                case ToolType.HydraulicBleeder:
-                    if (isLmb && HoveredHydraulic != null)
-                    {
-                        IsOperating = true;
-                        HoveredHydraulic.BleedAir(dt);
-                        HoveredHydraulic.FlushFluid(dt);
-                        fluid?.Emit(HitPoint, Vector3.Down, new Color(0.95f, 0.65f, 0.15f, 0.85f), 2);
-                        if (_rng.NextDouble() < 0.25) AudioManager.Instance?.PlayHydraulicHiss();
-                    }
-                    break;
-
-                case ToolType.PaintGun:
-                    if ((isLmb || justClicked) && HoveredPlate != null)
-                    {
-                        IsOperating = true;
-                        Color pCol = ArmorDecal.PaintPalette[ActiveColorIndex];
-                        HoveredPlate.BaseCoatingColor = pCol;
-                        aerosol?.Emit(HitPoint, Vector3.Forward, pCol, 3);
-                        if (justClicked) AudioManager.Instance?.PlayPaintSpray();
-                    }
-                    break;
-            }
+            HoveredPlate = null;
+            HoveredBolt = null;
+            HoveredCrack = null;
+            HoveredHydraulic = null;
+            HoveredRelay = null;
+            HoveredHarness = null;
+            HoveredBracket = null;
         }
 
         public void StopOperations()

@@ -67,6 +67,29 @@ namespace BuildMechanic.Graphics.Renderers
                     _boltMesh.ShankMesh.Draw(device, effect);
                 }
             }
+
+            // Draw RetainingBracket captive bolts when their outer armor plate is unmounted
+            foreach (var bracket in chassis.Brackets)
+            {
+                var parentPlate = chassis.Plates.Find(p => p.Id == bracket.SectorId);
+                if (parentPlate != null && parentPlate.State == PlateMountState.Mounted) continue;
+
+                Matrix bracketWorld = bracket.GetWorldMatrix();
+                foreach (var bolt in bracket.Bolts)
+                {
+                    Vector3 boltPos = bolt.GetWorldPosition(bracketWorld);
+                    effect.DiffuseColor = tools.HoveredBolt == bolt
+                        ? new Vector3(1.8f, 1.6f, 0.4f)
+                        : (bolt.IsTorqued ? new Vector3(0.85f, 0.92f, 1.0f) : new Vector3(1.2f, 0.80f, 0.35f));
+
+                    Matrix boltRot = Matrix.CreateScale(0.62f) * Matrix.CreateRotationY(bolt.SpinAngle) * Matrix.CreateRotationX(MathHelper.PiOver2);
+                    effect.World = boltRot * Matrix.CreateTranslation(boltPos);
+                    effect.Texture = _headTex;
+                    _boltMesh.HeadMesh.Draw(device, effect);
+                    effect.Texture = _threadTex;
+                    _boltMesh.ShankMesh.Draw(device, effect);
+                }
+            }
         }
 
         public void Dispose()

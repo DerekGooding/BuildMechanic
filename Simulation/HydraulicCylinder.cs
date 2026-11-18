@@ -15,6 +15,7 @@ namespace BuildMechanic.Simulation
         public float CurrentPressure { get; set; } = 100.0f;
         public float Contamination { get; set; } = 0.0f; // 0 to 100%
         public bool HasAirPocket { get; set; } = false;
+        public bool ManifoldRelieved { get; set; } = true;
 
         public bool IsNominal => Math.Abs(CurrentPressure - TargetPressure) <= 5.0f && !HasAirPocket && Contamination < 15.0f;
 
@@ -23,13 +24,15 @@ namespace BuildMechanic.Simulation
             CurrentPressure = pressure;
             Contamination = contamination;
             HasAirPocket = airPocket;
+            ManifoldRelieved = !airPocket;
         }
 
         public bool BleedAir(float dt)
         {
             if (!HasAirPocket) return false;
-            // Bleeding air drops residual pockets
+            // Bleeding air drops residual pockets and relieves manifold lock
             HasAirPocket = false;
+            ManifoldRelieved = true;
             CurrentPressure = Math.Max(CurrentPressure, TargetPressure * 0.75f);
             return true;
         }
